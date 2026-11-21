@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Escala de Cultos</title>
+<style>
+  :root{
+    --azul:#1f3a5f; --azul2:#2d5486; --claro:#eef3f9; --borda:#d5dde8;
+    --texto:#1c2430; --suave:#5b6878; --ouro:#c99a2e; --bg:#f7f9fc; --ok:#2e7d4f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--texto);background:var(--bg);font-size:15px}
+  header{background:var(--azul);color:#fff;padding:18px 20px 0}
+  header h1{margin:0;font-size:1.25rem;font-weight:600}
+  header p{margin:2px 0 12px;opacity:.8;font-size:.9rem}
+  .barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{background:transparent;border:0;color:#cfdbeb;padding:10px 14px;font-size:.95rem;cursor:pointer;border-radius:8px 8px 0 0}
+  nav button.ativo{background:var(--bg);color:var(--azul);font-weight:600}
+  .mes{display:flex;align-items:center;gap:6px;padding-bottom:8px}
+  .mes button{background:var(--azul2);color:#fff;border:0;border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:1rem}
+  .mes input{border:0;border-radius:6px;padding:6px 8px;font:inherit}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  section{display:none} section.ativo{display:block}
+  h2{font-size:1.1rem;color:var(--azul);margin:0 0 12px}
+  .acoes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+  .btn:hover{background:var(--azul2)}
+  .btn.sec{background:#fff;color:var(--azul);border:1px solid var(--borda)}
+  .btn.perigo{background:#fff;color:#b3261e;border:1px solid #e8c2bf}
+  .btn.pq{padding:5px 10px;font-size:.85rem}
+  .dica{color:var(--suave);font-size:.88rem;margin:-4px 0 14px}
+  .dia{background:#fff;border:1px solid var(--borda);border-radius:12px;margin-bottom:14px;overflow:hidden}
+  .dia h3{margin:0;padding:10px 14px;background:var(--claro);font-size:1rem;color:var(--azul);border-bottom:1px solid var(--borda)}
+  .dia.sabado h3{border-left:4px solid var(--ouro)}
+  .prog{padding:12px 14px;border-top:1px dashed var(--borda)}
+  .prog:first-of-type{border-top:0}
+  .prog-tit{display:flex;gap:10px;align-items:baseline;margin-bottom:8px}
+  .prog-tit span{color:var(--suave);font-size:.85rem}
+  .campos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  label{display:flex;flex-direction:column;font-size:.8rem;color:var(--suave);gap:4px}
+  input[type=text],input:not([type]),input[type=password],input[type=time],select,textarea{font:inherit;color:var(--texto);border:1px solid var(--borda);border-radius:7px;padding:7px 9px;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid #9db8da;border-color:transparent}
+  .campos input.preenchido{border-color:#a9cdb6;background:#f5fbf7}
+  .cartao{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;background:#fff}
+  th,td{border:1px solid var(--borda);padding:7px 9px;text-align:left;vertical-align:top;font-size:.9rem}
+  th{background:var(--claro);color:var(--azul)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--borda);border-radius:999px;padding:3px 10px;font-size:.82rem;cursor:pointer;user-select:none;color:var(--texto)}
+  .chip input{margin:0}
+  .chip.on{background:var(--claro);border-color:#9db8da}
+  .linha{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+  .vazio{color:var(--suave);padding:20px;text-align:center;background:#fff;border:1px dashed var(--borda);border-radius:12px}
+  .preview h2{text-align:center;margin-bottom:2px}
+  .preview .sub{text-align:center;color:var(--suave);margin:0 0 14px}
+  .preview td.data{font-weight:600;white-space:nowrap;background:#fafcfe}
+  .preview .na{color:#b8c1cc;text-align:center}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--texto);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  #toast.on{opacity:1}
+  .rolar{overflow-x:auto}
+  [hidden]{display:none!important}
+  body.deslogado header, body.deslogado main{display:none}
+  .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--azul),#13263f)}
+  .login-box{background:#fff;border-radius:14px;padding:28px 26px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .login-box h1{margin:0;font-size:1.2rem;color:var(--azul);text-align:center}
+  .login-box p.sub{margin:0 0 6px;text-align:center;color:var(--suave);font-size:.9rem}
+  .login-box .btn{padding:11px;font-size:1rem;margin-top:4px}
+  .erro{color:#b3261e;font-size:.88rem;margin:0;min-height:1.1em}
+  .usuario{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#dbe5f2}
+  .usuario button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit;font-size:.82rem}
+  .usuario button:hover{background:rgba(255,255,255,.1)}
+  .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+  .tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.78rem;background:var(--claro);color:var(--azul)}
+  .tag.admin{background:#fbf3df;color:#8a6412}
+  dialog{border:0;border-radius:12px;padding:22px;width:min(360px,92vw);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  dialog::backdrop{background:rgba(15,25,40,.45)}
+  dialog form{display:flex;flex-direction:column;gap:10px}
+  dialog h2{margin:0}
+  @media (max-width:600px){ main{padding:12px} nav button{padding:8px 10px;font-size:.88rem} }
+  @media print{
+    header,.no-print,#toast{display:none!important}
+    section{display:none!important} #tab-visualizar{display:block!important}
+    body{background:#fff} main{padding:0;max-width:none}
+    th{background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body class="deslogado">
+<!-- LOGIN -->
+<div id="telaLogin" class="login" hidden>
+  <form id="formLogin" class="login-box" autocomplete="on">
+    <h1 id="loginIgreja">Igreja Adventista do Sétimo Dia</h1>
+    <p class="sub" id="loginSub">Entre com seu usuário e senha</p>
+    <label id="campoNome" hidden>Seu nome<input id="lgNome" autocomplete="name"></label>
+    <label>Usuário<input id="lgUser" autocomplete="username" autocapitalize="none" required></label>
+    <label>Senha<input type="password" id="lgSenha" autocomplete="current-password" required></label>
+    <label id="campoSenha2" hidden>Confirmar senha<input type="password" id="lgSenha2" autocomplete="new-password"></label>
+    <p class="erro" id="lgErro"></p>
+    <button class="btn" id="lgBtn">Entrar</button>
+  </form>
+</div>
+
+<!-- TROCA DE SENHA -->
+<dialog id="dlgSenha">
+  <form id="formSenha">
+    <h2 id="dlgTitulo">Alterar senha</h2>
+    <label id="campoAtual">Senha atual<input type="password" id="snAtual" autocomplete="current-password"></label>
+    <label>Nova senha<input type="password" id="snNova" autocomplete="new-password" required></label>
+    <label>Confirmar nova senha<input type="password" id="snNova2" autocomplete="new-password" required></label>
+    <p class="erro" id="snErro"></p>
+    <div class="acoes" style="margin:0;justify-content:flex-end">
+      <button type="button" class="btn sec" id="snCancelar">Cancelar</button>
+      <button class="btn">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<header>
+  <div class="topo">
+    <div>
+      <h1 id="tituloIgreja">Igreja Adventista do Sétimo Dia</h1>
+      <p>Escala de Cultos — Quarta, Sábado e Domingo</p>
+    </div>
+    <div class="usuario">
+      <span id="usuarioInfo"></span>
+      <button id="btnMinhaSenha">Minha senha</button>
+      <button id="btnSair">Sair</button>
+    </div>
+  </div>
+  <div class="barra">
+    <nav>
+      <button data-tab="escala" class="ativo">Escala</button>
+      <button data-tab="membros" data-perfil="admin">Membros</button>
+      <button data-tab="visualizar">Visualizar / Enviar</button>
+      <button data-tab="config" data-perfil="admin">Configurações</button>
+      <button data-tab="usuarios" data-perfil="admin">Usuários</button>
+    </nav>
+    <div class="mes">
+      <button id="mesAnt" title="Mês anterior">‹</button>
+      <input type="month" id="mesSel">
+      <button id="mesProx" title="Próximo mês">›</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ESCALA -->
+  <section id="tab-escala" class="ativo">
+    <div class="acoes">
+      <button class="btn" id="btnSugerir">Preencher vazios por rodízio</button>
+      <button class="btn perigo" id="btnLimpar" data-perfil="admin">Limpar este mês</button>
+    </div>
+    <p class="dica">Digite os nomes ou escolha da lista. Tudo é salvo automaticamente neste navegador. O rodízio usa os membros cadastrados e as funções marcadas para cada um.</p>
+    <div id="listaDias"></div>
+  </section>
+
+  <!-- MEMBROS -->
+  <section id="tab-membros">
+    <div class="cartao">
+      <h2>Cadastrar membro</h2>
+      <div class="linha">
+        <label style="flex:1;min-width:220px">Nome<input id="novoNome" placeholder="Ex.: Pr. João Silva"></label>
+        <button class="btn" id="btnAddMembro">Adicionar</button>
+      </div>
+      <p class="dica" style="margin:10px 0 6px">Pode atuar em:</p>
+      <div class="chips" id="novoFuncoes"></div>
+    </div>
+    <div class="cartao">
+      <h2>Adicionar vários de uma vez</h2>
+      <label>Um nome por linha<textarea id="variosNomes" rows="4"></textarea></label>
+      <div style="margin-top:8px"><button class="btn sec" id="btnAddVarios">Adicionar todos</button></div>
+    </div>
+    <h2>Membros cadastrados</h2>
+    <div id="listaMembros"></div>
+  </section>
+
+  <!-- VISUALIZAR -->
+  <section id="tab-visualizar">
+    <div class="acoes no-print">
+      <button class="btn" onclick="window.print()">Imprimir / Salvar PDF</button>
+      <button class="btn sec" id="btnCopiar">Copiar texto para WhatsApp</button>
+      <button class="btn sec" id="btnWhats">Abrir no WhatsApp</button>
+    </div>
+    <div class="preview" id="preview"></div>
+  </section>
+
+  <!-- CONFIG -->
+  <section id="tab-config">
+    <div class="cartao">
+      <h2>Igreja</h2>
+      <label>Nome que aparece na escala<input id="cfgIgreja"></label>
+    </div>
+    <div class="cartao">
+      <h2>Programações</h2>
+      <p class="dica">Defina os cultos de cada dia, o horário e quais funções cada um precisa. Desmarque "Ativo" para ocultar.</p>
+      <div class="rolar"><table id="tabProgramas"></table></div>
+      <div style="margin-top:10px"><button class="btn sec" id="btnAddProg">+ Nova programação</button></div>
+    </div>
+    <div class="cartao">
+      <h2>Funções</h2>
+      <div id="listaFuncoes"></div>
+      <div class="linha" style="margin-top:10px">
+        <label style="flex:1;min-width:200px">Nova função<input id="novaFuncao" placeholder="Ex.: Recepção, Oração, Diaconato"></label>
+        <button class="btn sec" id="btnAddFuncao">Adicionar</button>
+      </div>
+    </div>
+    <div class="cartao">
+      <h2>Cópia de segurança</h2>
+      <p class="dica">Os dados ficam só neste navegador. Exporte um arquivo para guardar ou passar para outro computador/celular.</p>
+      <div class="acoes" style="margin:0">
+        <button class="btn sec" id="btnExportar">Exportar dados (.json)</button>
+        <label class="btn sec" style="flex-direction:row;color:var(--azul);font-size:inherit">Importar dados<input type="file" id="arqImport" accept=".json,application/json" hidden></label>
+        <button class="btn perigo" id="btnReset">Apagar escalas, membros e configurações</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- USUÁRIOS (somente admin) -->
+  <section id="tab-usuarios">
+    <div class="cartao">
+      <h2>Novo usuário</h2>
+      <p class="dica"><strong>Administrador:</strong> acesso a tudo. <strong>Líder:</strong> acessa apenas Escala e Visualizar / Enviar.</p>
+      <div class="linha">
+        <label style="flex:1;min-width:180px">Nome<input id="nuNome" placeholder="Ex.: Ancião Paulo"></label>
+        <label style="flex:1;min-width:140px">Usuário (login)<input id="nuLogin" autocapitalize="none" placeholder="Ex.: paulo"></label>
+        <label style="flex:1;min-width:140px">Senha inicial<input type="password" id="nuSenha" autocomplete="new-password" placeholder="Mín. 6 caracteres"></label>
+        <label style="min-width:140px">Perfil<select id="nuPerfil"><option value="lider">Líder</option><option value="admin">Administrador</option></select></label>
+        <button class="btn" id="btnAddUsuario">Criar usuário</button>
+      </div>
+    </div>
+    <h2>Usuários do sistema</h2>
+    <div id="listaUsuarios"></div>
+  </section>
+</main>
+
+<div id="datalists"></div>
+<div id="toast"></div>
+
+<script>
+const KEY = 'escala-cultos-iasd-v1';
+const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const ICONES = {pregacao:'🎤', sonoplastia:'🎚️', louvor:'🎶', especial:'🎵'};
+const PADRAO = {
+  igreja: 'Igreja Adventista do Sétimo Dia',
+  funcoes: [
+    {id:'pregacao',    nome:'Pregação'},
+    {id:'sonoplastia', nome:'Sonoplastia'},
+    {id:'louvor',      nome:'Louvor Congregacional'},
+    {id:'especial',    nome:'Louvor Especial'}
+  ],
+  programas: [
+    {id:'qua-oracao', dia:3, nome:'Culto de Oração',        hora:'19:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
+    {id:'sab-es',     dia:6, nome:'Escola Sabatina',        hora:'09:00', ativo:false, funcoes:['sonoplastia','louvor','especial']},
+    {id:'sab-divino', dia:6, nome:'Culto Divino',           hora:'10:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
+    {id:'sab-ja',     dia:6, nome:'Culto Jovem (JA)',       hora:'17:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
+    {id:'dom-evang',  dia:0, nome:'Culto de Evangelismo',   hora:'19:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']}
+  ],
+  usuarios: [],  // {id, nome, login, salt, hash, perfil:'admin'|'lider'}
+  membros: [],   // {id, nome, funcoes:[ids]}
+  escala: {}     // "AAAA-MM-DD|programaId" -> {funcaoId: nome, obs: texto}
+};
+
+const $ = s => document.querySelector(s);
+const clone = o => JSON.parse(JSON.stringify(o));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function carregar(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && typeof d === 'object') return Object.assign(clone(PADRAO), d);
+  }catch(e){}
+  return clone(PADRAO);
+}
+let S = carregar();
+function salvar(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('Não foi possível salvar neste navegador'); } }
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('on'),2200); }
+
+/* ---------- Mês ---------- */
+let mesAtual = (()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
+function mudarMes(delta){
+  const [y,m] = mesAtual.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  mesAtual = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  renderTudo();
+}
+function nomeMes(ym){
+  const [y,m] = ym.split('-').map(Number);
+  const s = new Date(y, m-1, 1).toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function diasDoMes(ym){
+  const [y,m] = ym.split('-').map(Number);
+  const total = new Date(y, m, 0).getDate(), out = [];
+  for (let d=1; d<=total; d++){
+    const dt = new Date(y, m-1, d);
+    const progs = S.programas.filter(p => p.ativo && Number(p.dia) === dt.getDay())
+                             .sort((a,b) => (a.hora||'').localeCompare(b.hora||''));
+    if (progs.length) out.push({ iso:`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`, dt, progs });
+  }
+  return out;
+}
+const fmtData = dt => DIAS[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
+const nomeFuncao = id => (S.funcoes.find(f => f.id === id) || {}).nome || id;
+const funcoesDo = p => (p.funcoes||[]).filter(fid => S.funcoes.some(f => f.id === fid))
+                                       .sort((a,b) => S.funcoes.findIndex(f=>f.id===a) - S.funcoes.findIndex(f=>f.id===b));
+
+/* ---------- Abas ---------- */
+function abrirAba(tab){
+  const b = document.querySelector(`nav button[data-tab="${tab}"]`);
+  if (!b || b.hidden) tab = 'escala';
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('ativo', x.dataset.tab===tab));
+  document.querySelectorAll('main section').forEach(s => s.classList.toggle('ativo', s.id==='tab-'+tab));
+  renderTudo();
+}
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => abrirAba(b.dataset.tab)));
+
+/* ---------- Login e perfis ---------- */
+const SESSAO = 'escala-cultos-sessao';
+let usuario = null;
+const ehAdmin = () => usuario?.perfil === 'admin';
+const modoSetup = () => !S.usuarios.length;
+
+async function hashSenha(senha, salt){
+  const dados = new TextEncoder().encode(salt + ':' + senha);
+  if (window.crypto?.subtle){
+    const b = await crypto.subtle.digest('SHA-256', dados);
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,'0')).join('');
+  }
+  let h = 5381; for (const c of dados) h = ((h << 5) + h + c) | 0; return 'x' + h;
+}
+async function definirSenha(u, senha){ u.salt = uid()+uid(); u.hash = await hashSenha(senha, u.salt); }
+
+function mostrarLogin(){
+  document.body.classList.add('deslogado');
+  $('#telaLogin').hidden = false;
+  const setup = modoSetup();
+  $('#campoNome').hidden = !setup; $('#campoSenha2').hidden = !setup;
+  $('#loginSub').textContent = setup ? 'Primeiro acesso: crie o usuário administrador' : 'Entre com seu usuário e senha';
+  $('#lgBtn').textContent = setup ? 'Criar administrador e entrar' : 'Entrar';
+  $('#loginIgreja').textContent = S.igreja || 'Escala de Cultos';
+  $('#lgErro').textContent = ''; $('#lgSenha').value = ''; $('#lgSenha2').value = '';
+  setTimeout(() => $(setup ? '#lgNome' : '#lgUser').focus(), 0);
+}
+$('#formLogin').addEventListener('submit', async e => {
+  e.preventDefault();
+  const erro = m => { $('#lgErro').textContent = m; };
+  const login = $('#lgUser').value.trim().toLowerCase(), senha = $('#lgSenha').value;
+  if (modoSetup()){
+    const nome = $('#lgNome').value.trim();
+    if (!nome) return erro('Informe seu nome');
+    if (senha.length < 6) return erro('A senha precisa ter pelo menos 6 caracteres');
+    if (senha !== $('#lgSenha2').value) return erro('As senhas não conferem');
+    const u = {id:uid(), nome, login, perfil:'admin'};
+    await definirSenha(u, senha); S.usuarios.push(u); salvar();
+  }
+  const u = S.usuarios.find(x => x.login === login);
+  if (!u || await hashSenha(senha, u.salt) !== u.hash) return erro('Usuário ou senha incorretos');
+  entrar(u);
+});
+function entrar(u){
+  usuario = u;
+  try{ sessionStorage.setItem(SESSAO, u.id); }catch(e){}
+  document.body.classList.remove('deslogado');
+  $('#telaLogin').hidden = true;
+  aplicarPerfil();
+  abrirAba(document.querySelector('nav button.ativo')?.dataset.tab || 'escala');
+}
+function sair(){
+  usuario = null;
+  try{ sessionStorage.removeItem(SESSAO); }catch(e){}
+  $('#lgUser').value = '';
+  mostrarLogin();
+}
+function aplicarPerfil(){
+  document.querySelectorAll('[data-perfil="admin"]').forEach(el => el.hidden = !ehAdmin());
+  $('#usuarioInfo').textContent = usuario.nome + ' · ' + (ehAdmin() ? 'Administrador' : 'Líder');
+}
+$('#btnSair').addEventListener('click', sair);
+
+/* troca de senha (própria ou redefinição pelo admin) */
+let alvoSenha = null;
+function abrirDialogSenha(u){
+  alvoSenha = u;
+  const propria = u.id === usuario.id;
+  $('#dlgTitulo').textContent = propria ? 'Alterar minha senha' : 'Redefinir senha de ' + u.nome;
+  $('#campoAtual').hidden = !propria;
+  ['#snAtual','#snNova','#snNova2'].forEach(s => $(s).value = '');
+  $('#snErro').textContent = '';
+  $('#dlgSenha').showModal();
+}
+$('#btnMinhaSenha').addEventListener('click', () => abrirDialogSenha(usuario));
+$('#snCancelar').addEventListener('click', () => $('#dlgSenha').close());
+$('#formSenha').addEventListener('submit', async e => {
+  e.preventDefault();
+  const erro = m => { $('#snErro').textContent = m; };
+  const u = alvoSenha, nova = $('#snNova').value;
+  if (u.id === usuario.id && await hashSenha($('#snAtual').value, u.salt) !== u.hash) return erro('Senha atual incorreta');
+  if (nova.length < 6) return erro('A nova senha precisa ter pelo menos 6 caracteres');
+  if (nova !== $('#snNova2').value) return erro('As senhas não conferem');
+  await definirSenha(u, nova); salvar();
+  $('#dlgSenha').close(); toast('Senha alterada');
+});
+
+/* ---------- Usuários (admin) ---------- */
+function renderUsuarios(){
+  if (!ehAdmin()) { $('#listaUsuarios').innerHTML = ''; return; }
+  const lista = [...S.usuarios].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
+  $('#listaUsuarios').innerHTML = `<div class="rolar"><table>
+    <tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Ações</th></tr>
+    ${lista.map(u => { const eu = u.id === usuario.id; return `<tr>
+      <td>${esc(u.nome)} ${eu ? '<small>(você)</small>' : ''}</td>
+      <td>${esc(u.login)}</td>
+      <td>${eu ? `<span class="tag admin">Administrador</span>` :
+        `<select data-uperfil="${u.id}"><option value="lider" ${u.perfil==='lider'?'selected':''}>Líder</option><option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option></select>`}</td>
+      <td><button class="btn sec pq" data-usenha="${u.id}">${eu ? 'Alterar senha' : 'Redefinir senha'}</button>
+          ${eu ? '' : `<button class="btn perigo pq" data-udel="${u.id}">Excluir</button>`}</td></tr>`; }).join('')}
+  </table></div>`;
+}
+$('#listaUsuarios').addEventListener('change', e => {
+  const u = S.usuarios.find(x => x.id === e.target.dataset.uperfil); if (!u || u.id === usuario.id) return;
+  u.perfil = e.target.value === 'admin' ? 'admin' : 'lider'; salvar(); toast('Perfil de '+u.nome+' atualizado');
+});
+$('#listaUsuarios').addEventListener('click', e => {
+  const s = e.target.dataset.usenha, d = e.target.dataset.udel;
+  if (s) abrirDialogSenha(S.usuarios.find(x => x.id === s));
+  if (d){
+    const u = S.usuarios.find(x => x.id === d); if (!u || u.id === usuario.id) return;
+    if (!confirm('Excluir o usuário '+u.nome+'?')) return;
+    S.usuarios = S.usuarios.filter(x => x.id !== d); salvar(); renderUsuarios();
+  }
+});
+$('#btnAddUsuario').addEventListener('click', async () => {
+  const nome = $('#nuNome').value.trim(), login = $('#nuLogin').value.trim().toLowerCase(), senha = $('#nuSenha').value;
+  if (!nome || !login) return toast('Informe nome e usuário');
+  if (/\s/.test(login)) return toast('O usuário não pode ter espaços');
+  if (S.usuarios.some(u => u.login === login)) return toast('Esse usuário já existe');
+  if (senha.length < 6) return toast('A senha precisa ter pelo menos 6 caracteres');
+  const u = {id:uid(), nome, login, perfil: $('#nuPerfil').value === 'admin' ? 'admin' : 'lider'};
+  await definirSenha(u, senha); S.usuarios.push(u); salvar();
+  ['#nuNome','#nuLogin','#nuSenha'].forEach(s => $(s).value = ''); $('#nuPerfil').value = 'lider';
+  renderUsuarios(); toast('Usuário '+login+' criado');
+});
+
+/* ---------- Escala ---------- */
+function renderEscala(){
+  const box = $('#listaDias'), dias = diasDoMes(mesAtual);
+  if (!dias.length){ box.innerHTML = '<p class="vazio">Nenhuma programação ativa neste mês. Veja a aba Configurações.</p>'; return; }
+  box.innerHTML = dias.map(d => `
+    <article class="dia ${d.dt.getDay()===6?'sabado':''}">
+      <h3>${fmtData(d.dt)}</h3>
+      ${d.progs.map(p => {
+        const r = S.escala[d.iso+'|'+p.id] || {};
+        return `<div class="prog">
+          <div class="prog-tit"><strong>${esc(p.nome)}</strong><span>${esc(p.hora)}</span></div>
+          <div class="campos">
+            ${funcoesDo(p).map(fid => `<label>${esc(nomeFuncao(fid))}
+              <input list="dl-${esc(fid)}" data-k="${d.iso}|${esc(p.id)}" data-f="${esc(fid)}" value="${esc(r[fid]||'')}" placeholder="Nome" class="${r[fid]?'preenchido':''}"></label>`).join('')}
+            <label>Tema / observação<input data-k="${d.iso}|${esc(p.id)}" data-f="obs" value="${esc(r.obs||'')}" placeholder="Opcional"></label>
+          </div>
+        </div>`;
+      }).join('')}
+    </article>`).join('');
+}
+$('#listaDias').addEventListener('input', e => {
+  const i = e.target; if (!i.dataset.k) return;
+  const r = S.escala[i.dataset.k] ||= {};
+  const v = i.value.trim();
+  if (v) r[i.dataset.f] = i.value; else delete r[i.dataset.f];
+  if (!Object.keys(r).length) delete S.escala[i.dataset.k];
+  if (i.dataset.f !== 'obs') i.classList.toggle('preenchido', !!v);
+  salvar();
+});
+
+function renderDatalists(){
+  $('#datalists').innerHTML = S.funcoes.map(f => {
+    let lista = S.membros.filter(m => (m.funcoes||[]).includes(f.id));
+    if (!lista.length) lista = S.membros;
+    return `<datalist id="dl-${esc(f.id)}">${lista.map(m => `<option value="${esc(m.nome)}">`).join('')}</datalist>`;
+  }).join('');
+}
+
+$('#btnSugerir').addEventListener('click', () => {
+  const dias = diasDoMes(mesAtual), cont = {};
+  dias.forEach(d => d.progs.forEach(p => {
+    const r = S.escala[d.iso+'|'+p.id] || {};
+    funcoesDo(p).forEach(fid => { if (r[fid]) { cont[fid] ??= {}; cont[fid][r[fid]] = (cont[fid][r[fid]]||0)+1; } });
+  }));
+  let n = 0, semGente = new Set();
+  dias.forEach(d => d.progs.forEach(p => {
+    const k = d.iso+'|'+p.id, r = S.escala[k] || {};
+    funcoesDo(p).forEach(fid => {
+      if (r[fid]) return;
+      const usados = new Set(Object.entries(r).filter(([c]) => c!=='obs').map(([,v]) => v));
+      const pool = S.membros.filter(m => (m.funcoes||[]).includes(fid) && !usados.has(m.nome));
+      if (!pool.length){ semGente.add(nomeFuncao(fid)); return; }
+      cont[fid] ??= {};
+      const min = Math.min(...pool.map(m => cont[fid][m.nome]||0));
+      const cand = pool.filter(m => (cont[fid][m.nome]||0) === min);
+      const pick = cand[Math.floor(Math.random()*cand.length)];
+      r[fid] = pick.nome; cont[fid][pick.nome] = min+1; n++;
+      S.escala[k] = r;
+    });
+  }));
+  salvar(); renderEscala();
+  toast(n ? `${n} vaga(s) preenchida(s)` + (semGente.size ? ` · sem membros para: ${[...semGente].join(', ')}` : '')
+          : (semGente.size ? `Cadastre membros para: ${[...semGente].join(', ')}` : 'Nenhuma vaga vazia'));
+});
+
+$('#btnLimpar').addEventListener('click', () => {
+  if (!ehAdmin()) return;
+  if (!confirm('Apagar toda a escala de '+nomeMes(mesAtual)+'?')) return;
+  Object.keys(S.escala).forEach(k => { if (k.startsWith(mesAtual+'-')) delete S.escala[k]; });
+  salvar(); renderEscala(); toast('Mês limpo');
+});
+
+/* ---------- Membros ---------- */
+function chipsFuncoes(sel, attrs=''){
+  return S.funcoes.map(f => `<label class="chip ${sel.includes(f.id)?'on':''}"><input type="checkbox" value="${esc(f.id)}" ${sel.includes(f.id)?'checked':''} ${attrs}>${esc(f.nome)}</label>`).join('');
+}
+function contagemMes(nome){
+  let c = 0;
+  Object.entries(S.escala).forEach(([k,r]) => { if (k.startsWith(mesAtual+'-')) Object.entries(r).forEach(([f,v]) => { if (f!=='obs' && v===nome) c++; }); });
+  return c;
+}
+function renderMembros(){
+  $('#novoFuncoes').innerHTML = chipsFuncoes([]);
+  const box = $('#listaMembros');
+  if (!S.membros.length){ box.innerHTML = '<p class="vazio">Nenhum membro cadastrado ainda.</p>'; return; }
+  const lista = [...S.membros].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
+  box.innerHTML = `<div class="rolar"><table><tr><th>Nome</th><th>Pode atuar em</th><th>Escalas em ${esc(nomeMes(mesAtual))}</th><th></th></tr>
+    ${lista.map(m => `<tr>
+      <td><input value="${esc(m.nome)}" data-mid="${m.id}" data-campo="nome" style="width:100%"></td>
+      <td><div class="chips">${chipsFuncoes(m.funcoes||[], `data-mid="${m.id}" data-campo="funcao"`)}</div></td>
+      <td style="text-align:center">${contagemMes(m.nome)}</td>
+      <td><button class="btn perigo pq" data-del="${m.id}">Excluir</button></td></tr>`).join('')}
+  </table></div>`;
+}
+document.addEventListener('change', e => {
+  const c = e.target.closest('.chip'); if (c) c.classList.toggle('on', e.target.checked);
+});
+$('#listaMembros').addEventListener('change', e => {
+  const i = e.target, m = S.membros.find(x => x.id === i.dataset.mid); if (!m) return;
+  if (i.dataset.campo === 'nome'){
+    const novo = i.value.trim(); if (!novo){ i.value = m.nome; return; }
+    const antigo = m.nome; m.nome = novo;
+    Object.values(S.escala).forEach(r => Object.keys(r).forEach(f => { if (f!=='obs' && r[f]===antigo) r[f]=novo; }));
+  } else if (i.dataset.campo === 'funcao'){
+    m.funcoes = m.funcoes || [];
+    if (i.checked){ if (!m.funcoes.includes(i.value)) m.funcoes.push(i.value); }
+    else m.funcoes = m.funcoes.filter(f => f !== i.value);
+  }
+  salvar(); renderDatalists();
+});
+$('#listaMembros').addEventListener('click', e => {
+  const id = e.target.dataset.del; if (!id) return;
+  const m = S.membros.find(x => x.id === id);
+  if (!confirm('Excluir '+m.nome+'? (as escalas já feitas continuam com o nome)')) return;
+  S.membros = S.membros.filter(x => x.id !== id); salvar(); renderMembros(); renderDatalists();
+});
+function addMembro(nome, funcoes){
+  nome = nome.trim(); if (!nome) return false;
+  if (S.membros.some(m => m.nome.toLowerCase() === nome.toLowerCase())) return false;
+  S.membros.push({id:uid(), nome, funcoes}); return true;
+}
+$('#btnAddMembro').addEventListener('click', () => {
+  const funcoes = [...document.querySelectorAll('#novoFuncoes input:checked')].map(i => i.value);
+  if (!addMembro($('#novoNome').value, funcoes)) { toast('Informe um nome que ainda não esteja cadastrado'); return; }
+  $('#novoNome').value = ''; salvar(); renderMembros(); renderDatalists(); toast('Membro adicionado');
+});
+$('#novoNome').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAddMembro').click(); });
+$('#btnAddVarios').addEventListener('click', () => {
+  let n = 0; $('#variosNomes').value.split('\n').forEach(l => { if (addMembro(l, [])) n++; });
+  $('#variosNomes').value = ''; salvar(); renderMembros(); renderDatalists();
+  toast(n+' membro(s) adicionado(s). Marque as funções de cada um na lista.');
+});
+
+/* ---------- Visualizar ---------- */
+function renderPreview(){
+  const dias = diasDoMes(mesAtual), box = $('#preview');
+  if (!dias.length){ box.innerHTML = '<p class="vazio">Nenhuma programação neste mês.</p>'; return; }
+  const usadas = S.funcoes.filter(f => dias.some(d => d.progs.some(p => funcoesDo(p).includes(f.id))));
+  const temObs = dias.some(d => d.progs.some(p => (S.escala[d.iso+'|'+p.id]||{}).obs));
+  let linhas = '';
+  dias.forEach(d => d.progs.forEach((p, i) => {
+    const r = S.escala[d.iso+'|'+p.id] || {}, fs = funcoesDo(p);
+    linhas += `<tr>${i===0 ? `<td class="data" rowspan="${d.progs.length}">${fmtData(d.dt)}</td>` : ''}
+      <td><strong>${esc(p.nome)}</strong><br><small>${esc(p.hora)}</small></td>
+      ${usadas.map(f => fs.includes(f.id) ? `<td>${esc(r[f.id]||'')}</td>` : '<td class="na">—</td>').join('')}
+      ${temObs ? `<td>${esc(r.obs||'')}</td>` : ''}</tr>`;
+  }));
+  box.innerHTML = `<h2>Escala de Cultos — ${esc(nomeMes(mesAtual))}</h2><p class="sub">${esc(S.igreja)}</p>
+    <div class="rolar"><table><tr><th>Data</th><th>Programação</th>${usadas.map(f => `<th>${esc(f.nome)}</th>`).join('')}${temObs?'<th>Tema / Obs.</th>':''}</tr>${linhas}</table></div>`;
+}
+function textoWhats(){
+  const dias = diasDoMes(mesAtual);
+  let t = `*Escala de Cultos — ${nomeMes(mesAtual)}*\n_${S.igreja}_\n`;
+  dias.forEach(d => d.progs.forEach(p => {
+    const r = S.escala[d.iso+'|'+p.id] || {};
+    t += `\n📅 *${fmtData(d.dt)}* — ${p.nome} (${p.hora})\n`;
+    if (r.obs) t += `📖 ${r.obs}\n`;
+    funcoesDo(p).forEach(fid => { t += `${ICONES[fid]||'•'} ${nomeFuncao(fid)}: ${r[fid] || 'a definir'}\n`; });
+  }));
+  return t + '\n_Deus abençoe a todos!_';
+}
+$('#btnCopiar').addEventListener('click', async () => {
+  const t = textoWhats();
+  try { await navigator.clipboard.writeText(t); }
+  catch(e){ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); }
+  toast('Texto copiado! Cole no grupo do WhatsApp.');
+});
+$('#btnWhats').addEventListener('click', () => window.open('https://wa.me/?text='+encodeURIComponent(textoWhats()), '_blank'));
+
+/* ---------- Configurações ---------- */
+function renderConfig(){
+  $('#cfgIgreja').value = S.igreja;
+  $('#tabProgramas').innerHTML = `<tr><th>Nome</th><th>Dia</th><th>Horário</th><th>Ativo</th><th>Funções necessárias</th><th></th></tr>` +
+    S.programas.map(p => `<tr>
+      <td><input value="${esc(p.nome)}" data-pid="${esc(p.id)}" data-campo="nome"></td>
+      <td><select data-pid="${esc(p.id)}" data-campo="dia">${DIAS.map((d,i) => `<option value="${i}" ${Number(p.dia)===i?'selected':''}>${d}</option>`).join('')}</select></td>
+      <td><input type="time" value="${esc(p.hora)}" data-pid="${esc(p.id)}" data-campo="hora"></td>
+      <td style="text-align:center"><input type="checkbox" ${p.ativo?'checked':''} data-pid="${esc(p.id)}" data-campo="ativo"></td>
+      <td><div class="chips">${chipsFuncoes(p.funcoes||[], `data-pid="${esc(p.id)}" data-campo="funcao"`)}</div></td>
+      <td><button class="btn perigo pq" data-delprog="${esc(p.id)}">Excluir</button></td></tr>`).join('');
+  $('#listaFuncoes').innerHTML = S.funcoes.map(f => `<div class="linha" style="margin-bottom:6px">
+      <input value="${esc(f.nome)}" data-fid="${esc(f.id)}" style="flex:1;min-width:200px">
+      <button class="btn perigo pq" data-delfunc="${esc(f.id)}">Excluir</button></div>`).join('');
+}
+$('#cfgIgreja').addEventListener('input', e => { S.igreja = e.target.value; $('#tituloIgreja').textContent = S.igreja || 'Escala de Cultos'; salvar(); });
+$('#tabProgramas').addEventListener('change', e => {
+  const i = e.target, p = S.programas.find(x => x.id === i.dataset.pid); if (!p) return;
+  const c = i.dataset.campo;
+  if (c === 'nome') p.nome = i.value;
+  else if (c === 'dia') p.dia = Number(i.value);
+  else if (c === 'hora') p.hora = i.value;
+  else if (c === 'ativo') p.ativo = i.checked;
+  else if (c === 'funcao'){ p.funcoes = p.funcoes||[]; if (i.checked){ if(!p.funcoes.includes(i.value)) p.funcoes.push(i.value); } else p.funcoes = p.funcoes.filter(f => f!==i.value); }
+  salvar();
+});
+$('#tabProgramas').addEventListener('click', e => {
+  const id = e.target.dataset.delprog; if (!id) return;
+  if (!confirm('Excluir esta programação?')) return;
+  S.programas = S.programas.filter(p => p.id !== id); salvar(); renderConfig();
+});
+$('#btnAddProg').addEventListener('click', () => {
+  S.programas.push({id:uid(), dia:6, nome:'Nova programação', hora:'19:00', ativo:true, funcoes:S.funcoes.map(f => f.id)});
+  salvar(); renderConfig();
+});
+$('#listaFuncoes').addEventListener('change', e => {
+  const f = S.funcoes.find(x => x.id === e.target.dataset.fid); if (!f) return;
+  f.nome = e.target.value.trim() || f.nome; salvar(); renderConfig();
+});
+$('#listaFuncoes').addEventListener('click', e => {
+  const id = e.target.dataset.delfunc; if (!id) return;
+  if (!confirm('Excluir a função "'+nomeFuncao(id)+'"? Ela sai de todas as programações.')) return;
+  S.funcoes = S.funcoes.filter(f => f.id !== id);
+  S.programas.forEach(p => p.funcoes = (p.funcoes||[]).filter(f => f !== id));
+  S.membros.forEach(m => m.funcoes = (m.funcoes||[]).filter(f => f !== id));
+  salvar(); renderConfig(); renderDatalists();
+});
+$('#btnAddFuncao').addEventListener('click', () => {
+  const nome = $('#novaFuncao').value.trim(); if (!nome) return;
+  S.funcoes.push({id:uid(), nome}); $('#novaFuncao').value = '';
+  salvar(); renderConfig(); renderDatalists(); toast('Função criada. Marque-a nas programações que precisam dela.');
+});
+$('#btnExportar').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'escala-cultos-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('#arqImport').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const d = JSON.parse(rd.result);
+      if (!d || !Array.isArray(d.funcoes) || !Array.isArray(d.programas)) throw 0;
+      if (!confirm('Substituir os dados atuais pelos do arquivo?')) return;
+      if (!Array.isArray(d.usuarios) || !d.usuarios.some(u => u.perfil === 'admin')) d.usuarios = S.usuarios;
+      S = Object.assign(clone(PADRAO), d); salvar();
+      const eu = S.usuarios.find(u => u.id === usuario.id);
+      if (!eu) { toast('Dados importados. Entre novamente.'); sair(); return; }
+      usuario = eu; aplicarPerfil(); abrirAba('config'); toast('Dados importados');
+    }catch(err){ toast('Arquivo inválido'); }
+    e.target.value = '';
+  };
+  rd.readAsText(f);
+});
+$('#btnReset').addEventListener('click', () => {
+  if (!confirm('Apagar membros, escalas e configurações? Os usuários serão mantidos. Faça uma exportação antes.')) return;
+  const us = S.usuarios; S = clone(PADRAO); S.usuarios = us; salvar(); renderTudo(); toast('Dados apagados');
+});
+
+/* ---------- Início ---------- */
+$('#mesAnt').addEventListener('click', () => mudarMes(-1));
+$('#mesProx').addEventListener('click', () => mudarMes(1));
+$('#mesSel').addEventListener('change', e => { if (e.target.value){ mesAtual = e.target.value; renderTudo(); } });
+function renderTudo(){
+  $('#mesSel').value = mesAtual;
+  $('#tituloIgreja').textContent = S.igreja || 'Escala de Cultos';
+  if (!usuario) return;
+  renderDatalists(); renderEscala(); renderPreview();
+  if (ehAdmin()){ renderMembros(); renderConfig(); renderUsuarios(); }
+}
+(() => {
+  let id = null; try{ id = sessionStorage.getItem(SESSAO); }catch(e){}
+  const u = S.usuarios.find(x => x.id === id);
+  if (u) entrar(u); else mostrarLogin();
+})();
+</script>
+</body>
+</html>
