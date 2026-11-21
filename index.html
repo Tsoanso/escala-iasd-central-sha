@@ -242,7 +242,7 @@
 <script>
 const KEY = 'escala-cultos-iasd-v1';
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const ICONES = {pregacao:'🎤', sonoplastia:'🎚️', louvor:'🎶', especial:'🎵'};
+const ICONES = {pregacao:'🎤', sonoplastia:'🎧', louvor:'🎶', especial:'🎵'};
 const PADRAO = {
   igreja: 'Igreja Adventista do Sétimo Dia',
   funcoes: [
@@ -613,7 +613,15 @@ $('#btnCopiar').addEventListener('click', async () => {
   catch(e){ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); }
   toast('Texto copiado! Cole no grupo do WhatsApp.');
 });
-$('#btnWhats').addEventListener('click', () => window.open('https://wa.me/?text='+encodeURIComponent(textoWhats()), '_blank'));
+$('#btnWhats').addEventListener('click', () => {
+  // Remove seletores de variação (U+FE0F), que alguns WhatsApp não decodificam no link
+  const texto = textoWhats().replace(/️/g, '').normalize('NFC');
+  const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Endereço direto (sem o redirecionamento do wa.me, que corrompe emojis)
+  const base = celular ? 'whatsapp://send?text=' : 'https://api.whatsapp.com/send?text=';
+  if (celular) location.href = base + encodeURIComponent(texto);
+  else window.open(base + encodeURIComponent(texto), '_blank');
+});
 
 /* ---------- Configurações ---------- */
 function renderConfig(){

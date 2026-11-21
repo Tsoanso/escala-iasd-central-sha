@@ -5,7 +5,7 @@ Aplicativo web simples para montar a escala dos cultos de **quarta, sábado e do
 O líder cadastra os membros e preenche, para cada culto:
 
 - 🎤 **Pregação**
-- 🎚️ **Sonoplastia**
+- 🎧 **Sonoplastia**
 - 🎶 **Louvor Congregacional**
 - 🎵 **Louvor Especial**
 - 📖 Tema / observação (opcional)
