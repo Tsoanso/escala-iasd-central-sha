@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Regras de segurança da Escala de Cultos.
+// Cole este conteúdo em: Firebase → Firestore Database → Regras → Publicar.
+//
+// - Administrador: lê e altera tudo.
+// - Líder: lê tudo; na escala só altera os campos (funções) atribuídos a ele.
+// - Usuário excluído (perfil "removido") ou sem cadastro: não acessa nada.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado()    { return request.auth != null; }
+    function meuCaminho() { return /databases/$(database)/documents/usuarios/$(request.auth.uid); }
+    function eu()        { return get(meuCaminho()).data; }
+    function ativo()     { return logado() && exists(meuCaminho()) && eu().perfil in ['admin', 'lider']; }
+    function admin()     { return ativo() && eu().perfil == 'admin'; }
+    function lider()     { return ativo() && eu().perfil == 'lider'; }
+    function instaladoCaminho() { return /databases/$(database)/documents/sistema/instalado; }
+
+    // Marca que o primeiro administrador já foi criado
+    match /sistema/instalado {
+      allow get: if true;
+      allow create: if logado()
+        && !exists(instaladoCaminho())
+        && getAfter(meuCaminho()).data.perfil == 'admin';
+    }
+
+    match /usuarios/{uid} {
+      allow read: if ativo() || (logado() && request.auth.uid == uid);
+      // Admin cria usuários; ou o primeiro administrador se cria na instalação
+      allow create: if admin()
+        || (logado() && request.auth.uid == uid
+            && request.resource.data.perfil == 'admin'
+            && !exists(instaladoCaminho())
+            && existsAfter(instaladoCaminho()));
+      // Admin altera usuários, mas não pode tirar o próprio perfil de administrador
+      allow update: if admin()
+        && !(uid == request.auth.uid && request.resource.data.perfil != 'admin');
+      allow delete: if false;
+    }
+
+    match /config/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+    }
+
+    match /membros/{id} {
+      allow read: if ativo();
+      allow write: if admin();
+    }
+
+    match /escala/{id} {
+      function permitidos() { return eu().funcoes.concat(['data', 'programa', '_avisos', 'obs']); }
+      function temaOk(chaves) { return !chaves.hasAny(['obs']) || eu().funcoes.hasAny(['pregacao']); }
+
+      allow read: if ativo();
+      allow delete: if admin();
+      allow create: if admin()
+        || (lider()
+            && request.resource.data.keys().hasOnly(permitidos())
+            && temaOk(request.resource.data.keys()));
+      allow update: if admin()
+        || (lider()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos())
+            && temaOk(request.resource.data.diff(resource.data).affectedKeys()));
+    }
+  }
+}

@@ -1,72 +1,101 @@
 # Escala de Cultos — IASD
 
-Aplicativo web simples para montar a escala dos cultos de **quarta, sábado e domingo** da Igreja Adventista do Sétimo Dia.
+Aplicativo web para montar a escala dos cultos de **quarta, sábado e domingo** da Igreja Adventista do Sétimo Dia. Os dados ficam **na nuvem (Firebase, do Google)**: todos os líderes veem e preenchem a mesma escala, cada um no seu celular ou computador, em tempo real.
 
-O líder cadastra os membros e preenche, para cada culto:
+Para cada culto, o app tem os campos:
 
 - 🎤 **Pregação**
 - 🎧 **Sonoplastia**
 - 🎶 **Louvor Congregacional**
 - 🎵 **Louvor Especial**
 - 🧒 **Adoração Infantil**, 🤝 **Diáconos**, 🤝 **Diaconisas** e 👋 **Recepção** (cultos de sábado)
-  - Diáconos e Diaconisas aceitam **quantas pessoas o líder quiser** (botão **+ Adicionar**). Em Configurações → Funções, a opção **Vários nomes** pode ser ligada para qualquer outra função.
+  - Diáconos e Diaconisas aceitam **quantas pessoas o líder quiser** (botão **+ Adicionar**). A opção **Vários nomes**, em Configurações → Funções, pode ser ligada para qualquer outra função.
 - 📖 Tema / observação (opcional)
 
-## Programações padrão
-
-| Dia | Programação | Horário |
-|---|---|---|
-| Quarta | Culto de Oração | 19:30 |
-| Sábado | Escola Sabatina *(desativada por padrão)* | 09:00 |
-| Sábado | Culto Divino | 10:30 |
-| Sábado | Culto Jovem (JA) | 17:00 |
-| Domingo | Culto de Evangelismo | 19:00 |
-
-Tudo pode ser alterado na aba **Configurações**: nomes, horários, dias, funções de cada culto e novas funções (Recepção, Diaconato, Oração etc.).
-
-## Login e perfis
-
-No **primeiro acesso** o sistema pede para criar o usuário **Administrador**. Na aba **Usuários**, o administrador cria os líderes e marca quais campos cada um preenche.
+## Perfis
 
 | Perfil | Acesso |
 |---|---|
-| **Administrador** | Escala, Membros, Visualizar / Enviar, Configurações e Usuários (cria líderes, muda perfis, redefine senhas, limpa o mês) |
-| **Líder** | **Escala** — vê e preenche **somente os campos atribuídos a ele** (ex.: só Sonoplastia) · **Visualizar / Enviar** — vê a escala completa |
+| **Administrador** | Tudo: Escala, Membros, Visualizar / Enviar, Avisos, Configurações e Usuários |
+| **Líder** | **Escala**: vê e preenche **somente os campos atribuídos a ele** · **Visualizar / Enviar**: vê a escala completa · **Avisos**: avisa quem foi escalado nas funções dele |
 
-Todos podem trocar a própria senha no botão **Minha senha**. As senhas são guardadas criptografadas (SHA-256 com salt).
-
-> ⚠️ Como o app roda só no navegador (sem servidor), o login organiza o acesso, mas não é uma proteção forte: quem tem o aparelho e conhecimento técnico consegue ler os dados. Os usuários existem apenas no navegador onde foram criados — use um aparelho compartilhado (ex.: computador da secretaria) ou evolua para um banco de dados online.
+O login é por **e-mail e senha**. A tela de entrada tem a opção "Esqueci minha senha", e quem já está dentro pode trocar a senha no botão **Minha senha**. As regras de segurança do Firebase garantem que um líder só consegue alterar os próprios campos, mesmo que tente burlar o app.
 
 ## Recursos
 
-- Escala mensal gerada automaticamente com todas as quartas, sábados e domingos
-- Cadastro de membros com as funções que cada um pode exercer
-- **Rodízio automático**: preenche as vagas vazias distribuindo de forma equilibrada
-- Contagem de quantas vezes cada membro foi escalado no mês
-- **Imprimir / salvar em PDF**
-- **Copiar para o WhatsApp** (texto formatado pronto para o grupo da igreja)
-- Exportar / importar backup em `.json`
-- Funciona no celular e no computador, sem instalar nada
+- Escala mensal com todas as quartas, sábados e domingos
+- **Tempo real**: o que um líder preenche aparece na hora para os outros
+- Cadastro de membros com o WhatsApp e as funções de cada um
+- **Rodízio automático**, que preenche as vagas vazias de forma equilibrada
+- **Imprimir / salvar em PDF** e **copiar para o WhatsApp**
+- **Avisos**: com um clique, abre o WhatsApp com a mensagem pronta para a pessoa escalada, 5 dias antes (a antecedência pode ser ajustada). Se ela não puder ir, a mensagem traz o contato do líder responsável.
+- Exportar / importar cópia de segurança (`.json`)
 
-> Os dados ficam salvos **no navegador** de quem usa (localStorage). Para levar para outro aparelho, use **Exportar** e **Importar** na aba Configurações.
+---
 
-## Avisos aos escalados (WhatsApp)
+# Instalação (uma única vez)
 
-Aba **Avisos** (administrador e líderes — cada líder vê só as suas funções):
+São três etapas: **criar o projeto no Firebase**, **colar a configuração** e **publicar no GitHub Pages**. Leva uns 15 minutos.
 
-- Lista quem está escalado nos próximos dias; o botão **Enviar** abre o WhatsApp já com o número da pessoa e a mensagem pronta (dia, horário, culto, função e o contato do líder responsável caso ela não possa ir). Marca "✓ enviado".
+## Etapa 1 — Criar o projeto no Firebase (grátis)
 
-Cadastre o WhatsApp (com DDD) dos membros em **Membros** e dos líderes em **Usuários** — o líder responsável por cada função é quem recebe o "não posso ir".
+1. Acesse **console.firebase.google.com** com uma conta Google da igreja e clique em **Criar um projeto**. Dê um nome, por exemplo `escala-iasd`. O Google Analytics pode ficar **desativado**.
+2. **Login por e-mail:** no menu, vá em **Criação → Authentication → Vamos começar → Método de login** e ative **E-mail/senha**. Clique em Salvar.
+3. **Banco de dados:** vá em **Criação → Firestore Database → Criar banco de dados**.
+   - Escolha a localização **southamerica-east1 (São Paulo)**.
+   - Escolha **Iniciar no modo de produção**.
+4. **Regras de segurança:** ainda no Firestore, abra a aba **Regras**. Apague o que estiver lá, cole todo o conteúdo do arquivo `firestore.rules` deste projeto e clique em **Publicar**.
+5. **Registrar o app da Web:** em **⚙️ Configurações do projeto → Geral → Seus apps**, clique no ícone **`</>`** (Web), dê um apelido e clique em **Registrar app**. Não precisa marcar o Hosting. Aparece um bloco assim:
 
-## Como publicar no GitHub Pages
+   ```js
+   const firebaseConfig = {
+     apiKey: "AIza...",
+     authDomain: "escala-iasd.firebaseapp.com",
+     projectId: "escala-iasd",
+     storageBucket: "escala-iasd.firebasestorage.app",
+     messagingSenderId: "1234567890",
+     appId: "1:1234567890:web:abc123"
+   };
+   ```
+   Copie esse bloco.
 
-1. Crie uma conta em [github.com](https://github.com) (se ainda não tiver).
-2. Clique em **New repository**, dê o nome `escala-cultos`, deixe **Public** e crie.
-3. Clique em **uploading an existing file** e envie os arquivos `index.html` e `README.md`. Clique em **Commit changes**.
-4. Vá em **Settings → Pages**. Em *Source*, escolha **Deploy from a branch**, branch **main**, pasta **/ (root)** e clique em **Save**.
-5. Em 1–2 minutos o app estará em:
-   `https://SEU-USUARIO.github.io/escala-cultos/`
+## Etapa 2 — Colar a configuração
+
+Abra o arquivo **`firebase-config.js`** e troque o bloco de exemplo pelo que você copiou. Mantenha o `export` no começo:
+
+```js
+export const firebaseConfig = {
+  apiKey: "AIza...",
+  ...
+};
+```
+
+> Esses dados **não são senha** e podem ficar públicos no GitHub. Quem protege os dados são as regras da etapa 1.4.
+
+## Etapa 3 — Publicar no GitHub Pages
+
+1. No repositório do GitHub (público), envie **todos** os arquivos: `index.html`, `app.js`, `nuvem.js`, `firebase-config.js`, `firestore.rules`, `README.md` e `LICENSE`. Use **Add file → Upload files**. Os arquivos que já existem serão substituídos.
+2. Em **Settings → Pages**: **Deploy from a branch → main → /(root) → Save**, se ainda não estiver ativo.
+3. **Autorize o endereço do site no Firebase:** em **Authentication → Configurações → Domínios autorizados → Adicionar domínio**, informe `SEU-USUARIO.github.io` (sem `https://` e sem o nome do repositório).
+4. Abra `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`. Aparece **"Primeiro acesso: crie o administrador do sistema"**: informe seu nome, e-mail e senha.
+
+Pronto! Agora, na aba **Usuários**, cadastre os líderes com o **e-mail** de cada um, uma senha inicial e os campos que vão preencher. Depois, passe para cada líder o link do site, o e-mail e a senha inicial. Ele pode trocar a senha depois.
+
+### Trazer os dados da versão anterior
+
+Se você usava a versão antiga (que salvava no navegador), abra o novo site **no mesmo computador e navegador** e entre como administrador. Em **Configurações** aparece o quadro **"Dados da versão anterior"**: clique em **Enviar dados deste navegador para a nuvem**. Os usuários antigos não são levados; cadastre-os de novo com e-mail. Também dá para usar **Importar dados** com um arquivo exportado pela versão antiga.
+
+---
+
+## Perguntas comuns
+
+- **Custa alguma coisa?** Não. O plano gratuito do Firebase (Spark) permite dezenas de milhares de leituras e gravações por dia, muito mais do que uma igreja usa. Não é preciso cadastrar cartão.
+- **E se alguém esquecer a senha?** Na tela de entrada, use "Esqueci minha senha": chega um e-mail com o link para criar outra. O administrador também pode, na aba Usuários, clicar em **Enviar redefinição de senha**.
+- **Como tirar o acesso de alguém?** Na aba Usuários, clique em **Excluir**. A pessoa é desconectada na hora e não entra mais. Para dar acesso de novo, cadastre o mesmo e-mail outra vez.
+- **Funciona sem internet?** Precisa de internet para entrar e para carregar. Se a conexão cair no meio do preenchimento, o app guarda o que foi digitado e envia quando a internet voltar. O canto superior mostra "☁️ salvo" ou "⏳ salvando…".
+- **Apareceu "Sem permissão para essa alteração"?** Confira se as regras do arquivo `firestore.rules` foram publicadas (etapa 1.4) e se o líder tem o campo marcado na aba Usuários.
+- **Erro ao entrar, falando de domínio não autorizado?** Falta a etapa 3.3.
 
 ## Licença
 
-MIT — livre para usar e adaptar em sua igreja.
+MIT — livre para usar e adaptar em sua igreja. Inclui o Firebase JavaScript SDK (Apache 2.0) no arquivo `nuvem.js`.
