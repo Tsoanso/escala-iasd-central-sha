@@ -8,6 +8,8 @@ O líder cadastra os membros e preenche, para cada culto:
 - 🎧 **Sonoplastia**
 - 🎶 **Louvor Congregacional**
 - 🎵 **Louvor Especial**
+- 🧒 **Adoração Infantil**, 🤝 **Diáconos**, 🤝 **Diaconisas** e 👋 **Recepção** (cultos de sábado)
+  - Diáconos e Diaconisas aceitam **quantas pessoas o líder quiser** (botão **+ Adicionar**). Em Configurações → Funções, a opção **Vários nomes** pode ser ligada para qualquer outra função.
 - 📖 Tema / observação (opcional)
 
 ## Programações padrão
@@ -24,12 +26,12 @@ Tudo pode ser alterado na aba **Configurações**: nomes, horários, dias, funç
 
 ## Login e perfis
 
-No **primeiro acesso** o sistema pede para criar o usuário **Administrador**.
+No **primeiro acesso** o sistema pede para criar o usuário **Administrador**. Na aba **Usuários**, o administrador cria os líderes e marca quais campos cada um preenche.
 
 | Perfil | Acesso |
 |---|---|
 | **Administrador** | Escala, Membros, Visualizar / Enviar, Configurações e Usuários (cria líderes, muda perfis, redefine senhas, limpa o mês) |
-| **Líder** | Somente **Escala** e **Visualizar / Enviar** |
+| **Líder** | **Escala** — vê e preenche **somente os campos atribuídos a ele** (ex.: só Sonoplastia) · **Visualizar / Enviar** — vê a escala completa |
 
 Todos podem trocar a própria senha no botão **Minha senha**. As senhas são guardadas criptografadas (SHA-256 com salt).
 
@@ -47,6 +49,14 @@ Todos podem trocar a própria senha no botão **Minha senha**. As senhas são gu
 - Funciona no celular e no computador, sem instalar nada
 
 > Os dados ficam salvos **no navegador** de quem usa (localStorage). Para levar para outro aparelho, use **Exportar** e **Importar** na aba Configurações.
+
+## Avisos aos escalados (WhatsApp)
+
+Aba **Avisos** (administrador e líderes — cada líder vê só as suas funções):
+
+- Lista quem está escalado nos próximos dias; o botão **Enviar** abre o WhatsApp já com o número da pessoa e a mensagem pronta (dia, horário, culto, função e o contato do líder responsável caso ela não possa ir). Marca "✓ enviado".
+
+Cadastre o WhatsApp (com DDD) dos membros em **Membros** e dos líderes em **Usuários** — o líder responsável por cada função é quem recebe o "não posso ir".
 
 ## Como publicar no GitHub Pages
 

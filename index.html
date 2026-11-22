@@ -41,7 +41,7 @@
   .prog-tit span{color:var(--suave);font-size:.85rem}
   .campos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
   label{display:flex;flex-direction:column;font-size:.8rem;color:var(--suave);gap:4px}
-  input[type=text],input:not([type]),input[type=password],input[type=time],select,textarea{font:inherit;color:var(--texto);border:1px solid var(--borda);border-radius:7px;padding:7px 9px;background:#fff}
+  input[type=text],input:not([type]),input[type=password],input[type=number],input[type=time],select,textarea{font:inherit;color:var(--texto);border:1px solid var(--borda);border-radius:7px;padding:7px 9px;background:#fff}
   input:focus,select:focus,textarea:focus{outline:2px solid #9db8da;border-color:transparent}
   .campos input.preenchido{border-color:#a9cdb6;background:#f5fbf7}
   .cartao{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:16px}
@@ -49,7 +49,7 @@
   th,td{border:1px solid var(--borda);padding:7px 9px;text-align:left;vertical-align:top;font-size:.9rem}
   th{background:var(--claro);color:var(--azul)}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
-  .chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--borda);border-radius:999px;padding:3px 10px;font-size:.82rem;cursor:pointer;user-select:none;color:var(--texto)}
+  .chip{display:inline-flex;flex-direction:row;align-items:center;gap:6px;border:1px solid var(--borda);border-radius:999px;padding:3px 10px;font-size:.82rem;cursor:pointer;user-select:none;color:var(--texto)}
   .chip input{margin:0}
   .chip.on{background:var(--claro);border-color:#9db8da}
   .linha{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
@@ -62,6 +62,18 @@
   #toast.on{opacity:1}
   .rolar{overflow-x:auto}
   [hidden]{display:none!important}
+  .tag.ok{background:#e6f4ec;color:var(--ok)}
+  .tag.alerta{background:#fdf1f0;color:#b3261e}
+  .tag.hoje{background:#fbf3df;color:#8a6412}
+  td.acoes-av{white-space:nowrap}
+  .tel{width:150px}
+  .multi{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:var(--suave)}
+  .multi-linha{display:flex;gap:5px}
+  .multi-linha input{flex:1;min-width:0}
+  .multi .rm{border:1px solid var(--borda);background:#fff;color:#b3261e;border-radius:7px;width:32px;cursor:pointer;font-size:1rem;line-height:1}
+  .multi .rm:hover{background:#fdf1f0}
+  .multi .add{align-self:flex-start;border:1px dashed #9db8da;background:#fff;color:var(--azul);border-radius:7px;padding:5px 10px;cursor:pointer;font:inherit;font-size:.82rem}
+  .multi .add:hover{background:var(--claro)}
   body.deslogado header, body.deslogado main{display:none}
   .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--azul),#13263f)}
   .login-box{background:#fff;border-radius:14px;padding:28px 26px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
@@ -80,6 +92,7 @@
   dialog form{display:flex;flex-direction:column;gap:10px}
   dialog h2{margin:0}
   @media (max-width:600px){ main{padding:12px} nav button{padding:8px 10px;font-size:.88rem} }
+  @page{size:landscape;margin:12mm}
   @media print{
     header,.no-print,#toast{display:none!important}
     section{display:none!important} #tab-visualizar{display:block!important}
@@ -135,6 +148,7 @@
       <button data-tab="escala" class="ativo">Escala</button>
       <button data-tab="membros" data-perfil="admin">Membros</button>
       <button data-tab="visualizar">Visualizar / Enviar</button>
+      <button data-tab="avisos">Avisos</button>
       <button data-tab="config" data-perfil="admin">Configurações</button>
       <button data-tab="usuarios" data-perfil="admin">Usuários</button>
     </nav>
@@ -153,7 +167,7 @@
       <button class="btn" id="btnSugerir">Preencher vazios por rodízio</button>
       <button class="btn perigo" id="btnLimpar" data-perfil="admin">Limpar este mês</button>
     </div>
-    <p class="dica">Digite os nomes ou escolha da lista. Tudo é salvo automaticamente neste navegador. O rodízio usa os membros cadastrados e as funções marcadas para cada um.</p>
+    <p class="dica" id="dicaEscala"></p>
     <div id="listaDias"></div>
   </section>
 
@@ -163,6 +177,7 @@
       <h2>Cadastrar membro</h2>
       <div class="linha">
         <label style="flex:1;min-width:220px">Nome<input id="novoNome" placeholder="Ex.: Pr. João Silva"></label>
+        <label style="min-width:180px">WhatsApp (com DDD)<input id="novoTel" inputmode="tel" placeholder="(71) 99999-9999"></label>
         <button class="btn" id="btnAddMembro">Adicionar</button>
       </div>
       <p class="dica" style="margin:10px 0 6px">Pode atuar em:</p>
@@ -218,18 +233,36 @@
     </div>
   </section>
 
+  <!-- AVISOS -->
+  <section id="tab-avisos">
+    <div class="cartao">
+      <h2>Avisos aos escalados</h2>
+      <div class="linha">
+        <label style="min-width:200px">Avisar com antecedência de (dias)<input type="number" id="avDias" min="1" max="30"></label>
+        <label style="min-width:200px">Mostrar cultos dos próximos (dias)<input type="number" id="avJanela" min="1" max="60"></label>
+      </div>
+      <p class="dica" style="margin:10px 0 0">Clique em <strong>Enviar</strong> para abrir o WhatsApp com a mensagem pronta para a pessoa. A mensagem pede que, se ela não puder ir, avise o líder responsável pela função. Os telefones são cadastrados em Membros (escalados) e em Usuários (líderes).</p>
+    </div>
+    <div id="listaAvisos"></div>
+  </section>
+
   <!-- USUÁRIOS (somente admin) -->
   <section id="tab-usuarios">
     <div class="cartao">
       <h2>Novo usuário</h2>
-      <p class="dica"><strong>Administrador:</strong> acesso a tudo. <strong>Líder:</strong> acessa apenas Escala e Visualizar / Enviar.</p>
+      <p class="dica"><strong>Administrador:</strong> acesso a tudo. <strong>Líder:</strong> acessa Escala (vendo só os campos pelos quais é responsável) e Visualizar / Enviar (escala completa).</p>
       <div class="linha">
         <label style="flex:1;min-width:180px">Nome<input id="nuNome" placeholder="Ex.: Ancião Paulo"></label>
         <label style="flex:1;min-width:140px">Usuário (login)<input id="nuLogin" autocapitalize="none" placeholder="Ex.: paulo"></label>
         <label style="flex:1;min-width:140px">Senha inicial<input type="password" id="nuSenha" autocomplete="new-password" placeholder="Mín. 6 caracteres"></label>
+        <label style="min-width:170px">WhatsApp (com DDD)<input id="nuTel" inputmode="tel" placeholder="(71) 99999-9999"></label>
         <label style="min-width:140px">Perfil<select id="nuPerfil"><option value="lider">Líder</option><option value="admin">Administrador</option></select></label>
-        <button class="btn" id="btnAddUsuario">Criar usuário</button>
       </div>
+      <div id="nuCampos">
+        <p class="dica" style="margin:12px 0 6px">Campos que este líder vai preencher:</p>
+        <div class="chips" id="nuFuncoes"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="btnAddUsuario">Criar usuário</button></div>
     </div>
     <h2>Usuários do sistema</h2>
     <div id="listaUsuarios"></div>
@@ -242,25 +275,32 @@
 <script>
 const KEY = 'escala-cultos-iasd-v1';
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const ICONES = {pregacao:'🎤', sonoplastia:'🎧', louvor:'🎶', especial:'🎵'};
+const ICONES = {pregacao:'🎤', sonoplastia:'🎧', louvor:'🎶', especial:'🎵', adoracao:'🧒', diaconos:'🤝', diaconisas:'🤝', recepcao:'👋'};
+const SABADO = ['adoracao','diaconos','diaconisas','recepcao'];
 const PADRAO = {
+  versao: 3,
   igreja: 'Igreja Adventista do Sétimo Dia',
   funcoes: [
     {id:'pregacao',    nome:'Pregação'},
     {id:'sonoplastia', nome:'Sonoplastia'},
     {id:'louvor',      nome:'Louvor Congregacional'},
-    {id:'especial',    nome:'Louvor Especial'}
+    {id:'especial',    nome:'Louvor Especial'},
+    {id:'adoracao',    nome:'Adoração Infantil'},
+    {id:'diaconos',    nome:'Diáconos',   multiplo:true},
+    {id:'diaconisas',  nome:'Diaconisas', multiplo:true},
+    {id:'recepcao',    nome:'Recepção'}
   ],
   programas: [
     {id:'qua-oracao', dia:3, nome:'Culto de Oração',        hora:'19:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
-    {id:'sab-es',     dia:6, nome:'Escola Sabatina',        hora:'09:00', ativo:false, funcoes:['sonoplastia','louvor','especial']},
-    {id:'sab-divino', dia:6, nome:'Culto Divino',           hora:'10:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
-    {id:'sab-ja',     dia:6, nome:'Culto Jovem (JA)',       hora:'17:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
+    {id:'sab-es',     dia:6, nome:'Escola Sabatina',        hora:'09:00', ativo:false, funcoes:['sonoplastia','louvor','especial',...SABADO]},
+    {id:'sab-divino', dia:6, nome:'Culto Divino',           hora:'10:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial',...SABADO]},
+    {id:'sab-ja',     dia:6, nome:'Culto Jovem (JA)',       hora:'17:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial',...SABADO]},
     {id:'dom-evang',  dia:0, nome:'Culto de Evangelismo',   hora:'19:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']}
   ],
-  usuarios: [],  // {id, nome, login, salt, hash, perfil:'admin'|'lider'}
-  membros: [],   // {id, nome, funcoes:[ids]}
-  escala: {}     // "AAAA-MM-DD|programaId" -> {funcaoId: nome, obs: texto}
+  usuarios: [],  // {id, nome, login, salt, hash, perfil:'admin'|'lider', funcoes:[ids que o líder preenche]}
+  membros: [],   // {id, nome, telefone, funcoes:[ids]}
+  escala: {},    // "AAAA-MM-DD|programaId" -> {funcaoId: nome | [nomes], obs: texto}
+  avisos: { dias: 5, enviados: {} }  // enviados: "data|programa|funcao|nome" -> timestamp
 };
 
 const $ = s => document.querySelector(s);
@@ -271,9 +311,21 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 function carregar(){
   try{
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && typeof d === 'object') return Object.assign(clone(PADRAO), d);
+    if (d && typeof d === 'object') return migrar(Object.assign(clone(PADRAO), {versao:1}, d));
   }catch(e){}
   return clone(PADRAO);
+}
+function migrar(d){
+  if ((d.versao || 1) < 2){
+    PADRAO.funcoes.filter(f => SABADO.includes(f.id)).forEach(f => { if (!d.funcoes.some(x => x.id === f.id)) d.funcoes.push(clone(f)); });
+    d.programas.forEach(p => { if (Number(p.dia) === 6){ p.funcoes = p.funcoes || []; SABADO.forEach(id => { if (!p.funcoes.includes(id)) p.funcoes.push(id); }); } });
+    d.versao = 2;
+  }
+  if (d.versao < 3){
+    d.funcoes.forEach(f => { if (f.id === 'diaconos' || f.id === 'diaconisas') f.multiplo = true; });
+    d.versao = 3;
+  }
+  return d;
 }
 let S = carregar();
 function salvar(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('Não foi possível salvar neste navegador'); } }
@@ -305,6 +357,12 @@ function diasDoMes(ym){
   return out;
 }
 const fmtData = dt => DIAS[dt.getDay()]+', '+String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
+const ehMultiplo = fid => !!(S.funcoes.find(f => f.id === fid) || {}).multiplo;
+// lista de nomes de um campo (aceita texto antigo "A, B" ou lista)
+const nomesDe = v => (Array.isArray(v) ? v : String(v ?? '').split(',')).map(x => String(x).trim()).filter(Boolean);
+// vagas de um campo múltiplo (inclui vagas vazias para digitar)
+const vagasDe = v => Array.isArray(v) ? [...v] : nomesDe(v);
+const textoDe = v => Array.isArray(v) ? nomesDe(v).join(', ') : String(v ?? '');
 const nomeFuncao = id => (S.funcoes.find(f => f.id === id) || {}).nome || id;
 const funcoesDo = p => (p.funcoes||[]).filter(fid => S.funcoes.some(f => f.id === fid))
                                        .sort((a,b) => S.funcoes.findIndex(f=>f.id===a) - S.funcoes.findIndex(f=>f.id===b));
@@ -409,22 +467,41 @@ $('#formSenha').addEventListener('submit', async e => {
 /* ---------- Usuários (admin) ---------- */
 function renderUsuarios(){
   if (!ehAdmin()) { $('#listaUsuarios').innerHTML = ''; return; }
+  if (!$('#nuFuncoes').children.length || $('#nuFuncoes').children.length !== S.funcoes.length) $('#nuFuncoes').innerHTML = chipsFuncoes([]);
   const lista = [...S.usuarios].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
   $('#listaUsuarios').innerHTML = `<div class="rolar"><table>
-    <tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Ações</th></tr>
+    <tr><th>Nome</th><th>Usuário</th><th>WhatsApp</th><th>Perfil</th><th>Campos que preenche</th><th>Ações</th></tr>
     ${lista.map(u => { const eu = u.id === usuario.id; return `<tr>
       <td>${esc(u.nome)} ${eu ? '<small>(você)</small>' : ''}</td>
       <td>${esc(u.login)}</td>
+      <td><input class="tel" value="${esc(u.telefone||'')}" data-utel="${u.id}" inputmode="tel" placeholder="(DDD) número"></td>
       <td>${eu ? `<span class="tag admin">Administrador</span>` :
         `<select data-uperfil="${u.id}"><option value="lider" ${u.perfil==='lider'?'selected':''}>Líder</option><option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option></select>`}</td>
+      <td>${u.perfil === 'admin' ? '<span class="dica">Todos</span>' :
+        `<div class="chips">${chipsFuncoes(u.funcoes||[], `data-ufunc="${u.id}"`)}</div>${(u.funcoes||[]).length ? '' : '<small style="color:#b3261e">Nenhum campo — este líder não verá nada na Escala</small>'}`}</td>
       <td><button class="btn sec pq" data-usenha="${u.id}">${eu ? 'Alterar senha' : 'Redefinir senha'}</button>
           ${eu ? '' : `<button class="btn perigo pq" data-udel="${u.id}">Excluir</button>`}</td></tr>`; }).join('')}
   </table></div>`;
 }
 $('#listaUsuarios').addEventListener('change', e => {
-  const u = S.usuarios.find(x => x.id === e.target.dataset.uperfil); if (!u || u.id === usuario.id) return;
-  u.perfil = e.target.value === 'admin' ? 'admin' : 'lider'; salvar(); toast('Perfil de '+u.nome+' atualizado');
+  const i = e.target;
+  if (i.dataset.utel){
+    const u = S.usuarios.find(x => x.id === i.dataset.utel); if (!u) return;
+    u.telefone = i.value.trim(); salvar();
+    if (u.telefone && !telefoneValido(u.telefone)) toast('Confira o número: use DDD + número');
+    return;
+  }
+  if (i.dataset.ufunc){
+    const u = S.usuarios.find(x => x.id === i.dataset.ufunc); if (!u) return;
+    u.funcoes = u.funcoes || [];
+    if (i.checked){ if (!u.funcoes.includes(i.value)) u.funcoes.push(i.value); }
+    else u.funcoes = u.funcoes.filter(f => f !== i.value);
+    salvar(); renderUsuarios(); return;
+  }
+  const u = S.usuarios.find(x => x.id === i.dataset.uperfil); if (!u || u.id === usuario.id) return;
+  u.perfil = i.value === 'admin' ? 'admin' : 'lider'; salvar(); renderUsuarios(); toast('Perfil de '+u.nome+' atualizado');
 });
+$('#nuPerfil').addEventListener('change', () => { $('#nuCampos').hidden = $('#nuPerfil').value === 'admin'; });
 $('#listaUsuarios').addEventListener('click', e => {
   const s = e.target.dataset.usenha, d = e.target.dataset.udel;
   if (s) abrirDialogSenha(S.usuarios.find(x => x.id === s));
@@ -440,17 +517,30 @@ $('#btnAddUsuario').addEventListener('click', async () => {
   if (/\s/.test(login)) return toast('O usuário não pode ter espaços');
   if (S.usuarios.some(u => u.login === login)) return toast('Esse usuário já existe');
   if (senha.length < 6) return toast('A senha precisa ter pelo menos 6 caracteres');
-  const u = {id:uid(), nome, login, perfil: $('#nuPerfil').value === 'admin' ? 'admin' : 'lider'};
+  const perfil = $('#nuPerfil').value === 'admin' ? 'admin' : 'lider';
+  const funcoes = [...document.querySelectorAll('#nuFuncoes input:checked')].map(i => i.value);
+  if (perfil === 'lider' && !funcoes.length) return toast('Marque ao menos um campo para este líder');
+  const u = {id:uid(), nome, login, perfil, telefone: $('#nuTel').value.trim(), funcoes: perfil === 'lider' ? funcoes : []};
   await definirSenha(u, senha); S.usuarios.push(u); salvar();
-  ['#nuNome','#nuLogin','#nuSenha'].forEach(s => $(s).value = ''); $('#nuPerfil').value = 'lider';
+  ['#nuNome','#nuLogin','#nuSenha','#nuTel'].forEach(s => $(s).value = ''); $('#nuPerfil').value = 'lider'; $('#nuCampos').hidden = false;
+  $('#nuFuncoes').innerHTML = chipsFuncoes([]);
   renderUsuarios(); toast('Usuário '+login+' criado');
 });
 
 /* ---------- Escala ---------- */
+const funcoesDoUsuario = () => ehAdmin() ? S.funcoes.map(f => f.id) : (usuario?.funcoes || []);
+const funcoesVisiveis = p => { const ok = funcoesDoUsuario(); return funcoesDo(p).filter(f => ok.includes(f)); };
+const podeTema = () => ehAdmin() || funcoesDoUsuario().includes('pregacao');
 function renderEscala(){
   const box = $('#listaDias'), dias = diasDoMes(mesAtual);
-  if (!dias.length){ box.innerHTML = '<p class="vazio">Nenhuma programação ativa neste mês. Veja a aba Configurações.</p>'; return; }
-  box.innerHTML = dias.map(d => `
+  const minhas = funcoesDoUsuario().filter(id => S.funcoes.some(f => f.id === id));
+  $('#dicaEscala').innerHTML = ehAdmin()
+    ? 'Digite os nomes ou escolha da lista. Tudo é salvo automaticamente neste navegador. O rodízio usa os membros cadastrados e as funções marcadas para cada um.'
+    : (minhas.length ? 'Você é responsável por: <strong>' + minhas.map(id => esc(nomeFuncao(id))).join(', ') + '</strong>. A escala completa está em Visualizar / Enviar.' : '');
+  if (!minhas.length){ box.innerHTML = '<p class="vazio">Nenhum campo foi atribuído a você ainda. Peça ao administrador para definir quais campos você preenche.</p>'; return; }
+  const visiveis = dias.map(d => ({...d, progs: d.progs.filter(p => funcoesVisiveis(p).length)})).filter(d => d.progs.length);
+  if (!visiveis.length){ box.innerHTML = '<p class="vazio">Nenhuma programação deste mês usa os seus campos.</p>'; return; }
+  box.innerHTML = visiveis.map(d => `
     <article class="dia ${d.dt.getDay()===6?'sabado':''}">
       <h3>${fmtData(d.dt)}</h3>
       ${d.progs.map(p => {
@@ -458,22 +548,59 @@ function renderEscala(){
         return `<div class="prog">
           <div class="prog-tit"><strong>${esc(p.nome)}</strong><span>${esc(p.hora)}</span></div>
           <div class="campos">
-            ${funcoesDo(p).map(fid => `<label>${esc(nomeFuncao(fid))}
-              <input list="dl-${esc(fid)}" data-k="${d.iso}|${esc(p.id)}" data-f="${esc(fid)}" value="${esc(r[fid]||'')}" placeholder="Nome" class="${r[fid]?'preenchido':''}"></label>`).join('')}
-            <label>Tema / observação<input data-k="${d.iso}|${esc(p.id)}" data-f="obs" value="${esc(r.obs||'')}" placeholder="Opcional"></label>
+            ${funcoesVisiveis(p).map(fid => campoHTML(d.iso+'|'+p.id, fid, r[fid])).join('')}
+            ${podeTema() ? `<label>Tema / observação<input data-k="${d.iso}|${esc(p.id)}" data-f="obs" value="${esc(r.obs||'')}" placeholder="Opcional"></label>` : ''}
           </div>
         </div>`;
       }).join('')}
     </article>`).join('');
 }
+function campoHTML(k, fid, v){
+  const attrs = `list="dl-${esc(fid)}" data-k="${esc(k)}" data-f="${esc(fid)}"`;
+  if (!ehMultiplo(fid)){
+    const t = textoDe(v);
+    return `<label>${esc(nomeFuncao(fid))}<input ${attrs} value="${esc(t)}" placeholder="Nome" class="${t?'preenchido':''}"></label>`;
+  }
+  let vagas = vagasDe(v); if (!vagas.length) vagas = [''];
+  return `<div class="multi"><span>${esc(nomeFuncao(fid))} <small>(${nomesDe(v).length})</small></span>
+    ${vagas.map((n, i) => `<div class="multi-linha">
+      <input ${attrs} data-idx="${i}" value="${esc(n)}" placeholder="Nome" class="${n.trim()?'preenchido':''}">
+      <button type="button" class="rm" data-rm="${i}" data-k="${esc(k)}" data-f="${esc(fid)}" title="Remover">×</button></div>`).join('')}
+    <button type="button" class="add" data-add="1" data-k="${esc(k)}" data-f="${esc(fid)}">+ Adicionar</button></div>`;
+}
+function atualizarCampo(k, fid, v){
+  const r = S.escala[k] ||= {};
+  const vazio = Array.isArray(v) ? (!v.length || (v.length === 1 && !v[0].trim())) : !String(v).trim();
+  if (vazio) delete r[fid]; else r[fid] = v;
+  if (!Object.keys(r).length) delete S.escala[k];
+  salvar();
+}
+$('#listaDias').addEventListener('click', e => {
+  const b = e.target.closest('button[data-k]'); if (!b) return;
+  const k = b.dataset.k, fid = b.dataset.f;
+  if (!funcoesDoUsuario().includes(fid)) return;
+  const vagas = vagasDe((S.escala[k] || {})[fid]);
+  let foco;
+  if (b.dataset.add){ if (!vagas.length) vagas.push(''); vagas.push(''); foco = vagas.length - 1; }
+  else { vagas.splice(Number(b.dataset.rm), 1); }
+  atualizarCampo(k, fid, vagas.length ? vagas : []);
+  if (b.dataset.add && !S.escala[k]?.[fid]) { (S.escala[k] ||= {})[fid] = vagas; salvar(); }
+  renderEscala();
+  if (foco != null) document.querySelector(`#listaDias input[data-k="${k}"][data-f="${fid}"][data-idx="${foco}"]`)?.focus();
+  else renderPreview();
+});
 $('#listaDias').addEventListener('input', e => {
   const i = e.target; if (!i.dataset.k) return;
-  const r = S.escala[i.dataset.k] ||= {};
+  if (i.dataset.f === 'obs' ? !podeTema() : !funcoesDoUsuario().includes(i.dataset.f)) return;
   const v = i.value.trim();
-  if (v) r[i.dataset.f] = i.value; else delete r[i.dataset.f];
-  if (!Object.keys(r).length) delete S.escala[i.dataset.k];
+  if (i.dataset.idx != null){
+    const vagas = vagasDe((S.escala[i.dataset.k] || {})[i.dataset.f]);
+    while (vagas.length <= Number(i.dataset.idx)) vagas.push('');
+    vagas[Number(i.dataset.idx)] = i.value;
+    atualizarCampo(i.dataset.k, i.dataset.f, vagas);
+    const cont = i.closest('.multi').querySelector('small'); if (cont) cont.textContent = '(' + nomesDe(vagas).length + ')';
+  } else atualizarCampo(i.dataset.k, i.dataset.f, i.value);
   if (i.dataset.f !== 'obs') i.classList.toggle('preenchido', !!v);
-  salvar();
 });
 
 function renderDatalists(){
@@ -488,22 +615,29 @@ $('#btnSugerir').addEventListener('click', () => {
   const dias = diasDoMes(mesAtual), cont = {};
   dias.forEach(d => d.progs.forEach(p => {
     const r = S.escala[d.iso+'|'+p.id] || {};
-    funcoesDo(p).forEach(fid => { if (r[fid]) { cont[fid] ??= {}; cont[fid][r[fid]] = (cont[fid][r[fid]]||0)+1; } });
+    funcoesDo(p).forEach(fid => nomesDe(ehMultiplo(fid) ? r[fid] : [textoDe(r[fid])]).forEach(nm => { cont[fid] ??= {}; cont[fid][nm] = (cont[fid][nm]||0)+1; }));
   }));
   let n = 0, semGente = new Set();
   dias.forEach(d => d.progs.forEach(p => {
     const k = d.iso+'|'+p.id, r = S.escala[k] || {};
-    funcoesDo(p).forEach(fid => {
-      if (r[fid]) return;
-      const usados = new Set(Object.entries(r).filter(([c]) => c!=='obs').map(([,v]) => v));
-      const pool = S.membros.filter(m => (m.funcoes||[]).includes(fid) && !usados.has(m.nome));
-      if (!pool.length){ semGente.add(nomeFuncao(fid)); return; }
-      cont[fid] ??= {};
-      const min = Math.min(...pool.map(m => cont[fid][m.nome]||0));
-      const cand = pool.filter(m => (cont[fid][m.nome]||0) === min);
-      const pick = cand[Math.floor(Math.random()*cand.length)];
-      r[fid] = pick.nome; cont[fid][pick.nome] = min+1; n++;
-      S.escala[k] = r;
+    funcoesVisiveis(p).forEach(fid => {
+      const multi = ehMultiplo(fid);
+      // vagas a preencher: campo simples = 1; múltiplo = vagas vazias (ou 2 se ainda não houver ninguém)
+      let vagas = multi ? vagasDe(r[fid]) : [textoDe(r[fid])];
+      if (multi && !vagas.length) vagas = ['', ''];
+      if (!vagas.some(x => !x.trim())) return;
+      const escolher = () => {
+        const usados = new Set(Object.entries(r).filter(([c]) => c!=='obs').flatMap(([,v]) => nomesDe(Array.isArray(v) ? v : [v])).concat(nomesDe(vagas)));
+        const pool = S.membros.filter(m => (m.funcoes||[]).includes(fid) && !usados.has(m.nome));
+        if (!pool.length){ semGente.add(nomeFuncao(fid)); return null; }
+        cont[fid] ??= {};
+        const min = Math.min(...pool.map(m => cont[fid][m.nome]||0));
+        const cand = pool.filter(m => (cont[fid][m.nome]||0) === min);
+        const pick = cand[Math.floor(Math.random()*cand.length)];
+        cont[fid][pick.nome] = min+1; n++; return pick.nome;
+      };
+      vagas = vagas.map(x => x.trim() ? x : (escolher() || ''));
+      if (nomesDe(vagas).length){ r[fid] = multi ? vagas : vagas[0]; S.escala[k] = r; }
     });
   }));
   salvar(); renderEscala();
@@ -524,7 +658,7 @@ function chipsFuncoes(sel, attrs=''){
 }
 function contagemMes(nome){
   let c = 0;
-  Object.entries(S.escala).forEach(([k,r]) => { if (k.startsWith(mesAtual+'-')) Object.entries(r).forEach(([f,v]) => { if (f!=='obs' && v===nome) c++; }); });
+  Object.entries(S.escala).forEach(([k,r]) => { if (k.startsWith(mesAtual+'-')) Object.entries(r).forEach(([f,v]) => { if (f!=='obs') c += nomesDe(Array.isArray(v) ? v : [v]).filter(x => x === nome).length; }); });
   return c;
 }
 function renderMembros(){
@@ -532,9 +666,10 @@ function renderMembros(){
   const box = $('#listaMembros');
   if (!S.membros.length){ box.innerHTML = '<p class="vazio">Nenhum membro cadastrado ainda.</p>'; return; }
   const lista = [...S.membros].sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'));
-  box.innerHTML = `<div class="rolar"><table><tr><th>Nome</th><th>Pode atuar em</th><th>Escalas em ${esc(nomeMes(mesAtual))}</th><th></th></tr>
+  box.innerHTML = `<div class="rolar"><table><tr><th>Nome</th><th>WhatsApp</th><th>Pode atuar em</th><th>Escalas em ${esc(nomeMes(mesAtual))}</th><th></th></tr>
     ${lista.map(m => `<tr>
       <td><input value="${esc(m.nome)}" data-mid="${m.id}" data-campo="nome" style="width:100%"></td>
+      <td><input class="tel" value="${esc(m.telefone||'')}" data-mid="${m.id}" data-campo="telefone" inputmode="tel" placeholder="(DDD) número"></td>
       <td><div class="chips">${chipsFuncoes(m.funcoes||[], `data-mid="${m.id}" data-campo="funcao"`)}</div></td>
       <td style="text-align:center">${contagemMes(m.nome)}</td>
       <td><button class="btn perigo pq" data-del="${m.id}">Excluir</button></td></tr>`).join('')}
@@ -548,7 +683,14 @@ $('#listaMembros').addEventListener('change', e => {
   if (i.dataset.campo === 'nome'){
     const novo = i.value.trim(); if (!novo){ i.value = m.nome; return; }
     const antigo = m.nome; m.nome = novo;
-    Object.values(S.escala).forEach(r => Object.keys(r).forEach(f => { if (f!=='obs' && r[f]===antigo) r[f]=novo; }));
+    Object.values(S.escala).forEach(r => Object.keys(r).forEach(f => {
+      if (f === 'obs') return;
+      if (Array.isArray(r[f])) r[f] = r[f].map(x => x.trim() === antigo ? novo : x);
+      else if (r[f] === antigo) r[f] = novo;
+    }));
+  } else if (i.dataset.campo === 'telefone'){
+    m.telefone = i.value.trim();
+    if (m.telefone && !telefoneValido(m.telefone)) toast('Confira o número: use DDD + número, ex.: (71) 99999-9999');
   } else if (i.dataset.campo === 'funcao'){
     m.funcoes = m.funcoes || [];
     if (i.checked){ if (!m.funcoes.includes(i.value)) m.funcoes.push(i.value); }
@@ -562,15 +704,15 @@ $('#listaMembros').addEventListener('click', e => {
   if (!confirm('Excluir '+m.nome+'? (as escalas já feitas continuam com o nome)')) return;
   S.membros = S.membros.filter(x => x.id !== id); salvar(); renderMembros(); renderDatalists();
 });
-function addMembro(nome, funcoes){
+function addMembro(nome, funcoes, telefone=''){
   nome = nome.trim(); if (!nome) return false;
   if (S.membros.some(m => m.nome.toLowerCase() === nome.toLowerCase())) return false;
-  S.membros.push({id:uid(), nome, funcoes}); return true;
+  S.membros.push({id:uid(), nome, telefone: telefone.trim(), funcoes}); return true;
 }
 $('#btnAddMembro').addEventListener('click', () => {
   const funcoes = [...document.querySelectorAll('#novoFuncoes input:checked')].map(i => i.value);
-  if (!addMembro($('#novoNome').value, funcoes)) { toast('Informe um nome que ainda não esteja cadastrado'); return; }
-  $('#novoNome').value = ''; salvar(); renderMembros(); renderDatalists(); toast('Membro adicionado');
+  if (!addMembro($('#novoNome').value, funcoes, $('#novoTel').value)) { toast('Informe um nome que ainda não esteja cadastrado'); return; }
+  $('#novoNome').value = ''; $('#novoTel').value = ''; salvar(); renderMembros(); renderDatalists(); toast('Membro adicionado');
 });
 $('#novoNome').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAddMembro').click(); });
 $('#btnAddVarios').addEventListener('click', () => {
@@ -578,6 +720,137 @@ $('#btnAddVarios').addEventListener('click', () => {
   $('#variosNomes').value = ''; salvar(); renderMembros(); renderDatalists();
   toast(n+' membro(s) adicionado(s). Marque as funções de cada um na lista.');
 });
+
+/* ---------- Avisos ---------- */
+const soDigitos = t => String(t||'').replace(/\D/g, '');
+// Converte para o formato internacional usado pelo WhatsApp (Brasil = 55)
+function telefoneWhats(t){
+  let d = soDigitos(t);
+  if (!d) return '';
+  if (d.startsWith('0')) d = d.replace(/^0+/, '');
+  if (d.length === 10 || d.length === 11) d = '55' + d;
+  return d;
+}
+const telefoneValido = t => { const d = telefoneWhats(t); return d.length >= 12 && d.length <= 13; };
+const isoDe = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+const dataDeIso = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); };
+const hojeLocal = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const somaDias = (dt, n) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n);
+const diasEntre = (a, b) => Math.round((b - a) / 86400000);
+
+function membroPorNome(nome){
+  const n = nome.trim().toLowerCase();
+  return S.membros.find(m => m.nome.trim().toLowerCase() === n);
+}
+// Líder responsável pela função: 1º líder com a função e telefone; senão um administrador com telefone
+function responsavelDe(fid){
+  const comTel = S.usuarios.filter(u => telefoneValido(u.telefone));
+  return comTel.find(u => u.perfil === 'lider' && (u.funcoes||[]).includes(fid))
+      || S.usuarios.find(u => u.perfil === 'lider' && (u.funcoes||[]).includes(fid))
+      || comTel.find(u => u.perfil === 'admin') || null;
+}
+// Todas as pessoas escaladas entre duas datas (inclusive)
+function escaladosEntre(inicio, fim, filtroFuncoes){
+  const out = [];
+  for (let dt = new Date(inicio); dt <= fim; dt = somaDias(dt, 1)){
+    const iso = isoDe(dt);
+    S.programas.filter(p => p.ativo && Number(p.dia) === dt.getDay())
+      .sort((a,b) => (a.hora||'').localeCompare(b.hora||''))
+      .forEach(p => {
+        const r = S.escala[iso+'|'+p.id] || {};
+        funcoesDo(p).filter(f => !filtroFuncoes || filtroFuncoes.includes(f)).forEach(fid => {
+          const nomes = ehMultiplo(fid) ? nomesDe(r[fid]) : (textoDe(r[fid]).trim() ? [textoDe(r[fid]).trim()] : []);
+          nomes.forEach(nome => {
+            const m = membroPorNome(nome);
+            out.push({ iso, dt: new Date(dt), prog: p, fid, nome, telefone: m?.telefone || '', chave: [iso, p.id, fid, nome].join('|') });
+          });
+        });
+      });
+  }
+  return out;
+}
+const quandoTexto = a => `${DIAS[a.dt.getDay()].toLowerCase()}, ${String(a.dt.getDate()).padStart(2,'0')}/${String(a.dt.getMonth()+1).padStart(2,'0')}, às ${a.prog.hora || '—'}`;
+function mensagemAviso(a){
+  const resp = responsavelDe(a.fid);
+  const contato = resp
+    ? `${resp.nome}${telefoneValido(resp.telefone) ? ' pelo WhatsApp: https://wa.me/' + telefoneWhats(resp.telefone) : ''}`
+    : 'o líder responsável';
+  return `Olá, ${a.nome.split(' ')[0]}! 🙏\n\n` +
+    `Lembrete da escala da *${S.igreja}*:\n\n` +
+    `📅 *${quandoTexto(a).replace(/^./, c => c.toUpperCase())}*\n` +
+    `⛪ ${a.prog.nome}\n` +
+    `${ICONES[a.fid] || '•'} Função: *${nomeFuncao(a.fid)}*\n\n` +
+    `Caso não possa comparecer, por favor avise com antecedência ${contato}\n\n` +
+    `Deus abençoe!`;
+}
+function linkWhats(telefone, texto){
+  texto = texto.replace(/\uFE0F/g, '').normalize('NFC');
+  const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const tel = telefoneWhats(telefone);
+  const q = (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(texto);
+  return (celular ? 'whatsapp://send?' : 'https://api.whatsapp.com/send?') + q;
+}
+function abrirWhats(url){
+  if (url.startsWith('whatsapp://')) location.href = url; else window.open(url, '_blank');
+}
+
+let avJanela = null;
+function renderAvisos(){
+  const dias = Number(S.avisos?.dias) || 5;
+  if (avJanela == null) avJanela = Math.max(dias + 2, 7);
+  $('#avDias').value = dias; $('#avDias').disabled = !ehAdmin();
+  $('#avJanela').value = avJanela;
+  const hoje = hojeLocal();
+  const lista = escaladosEntre(hoje, somaDias(hoje, avJanela), ehAdmin() ? null : funcoesDoUsuario());
+  renderAvisos.lista = lista;
+  const box = $('#listaAvisos');
+  if (!lista.length){ box.innerHTML = `<p class="vazio">Ninguém escalado ${ehAdmin() ? '' : 'nas suas funções '}nos próximos ${avJanela} dias.</p>`; return; }
+  const enviados = S.avisos.enviados || {};
+  const grupos = {};
+  lista.forEach((a, i) => { (grupos[a.iso] ||= []).push(i); });
+  box.innerHTML = Object.entries(grupos).map(([iso, idxs]) => {
+    const dt = dataDeIso(iso), falta = diasEntre(hoje, dt);
+    const etiqueta = falta === 0 ? 'hoje' : falta === 1 ? 'amanhã' : `daqui a ${falta} dias`;
+    const diaDeAvisar = falta === dias;
+    return `<article class="dia ${dt.getDay()===6?'sabado':''}">
+      <h3>${fmtData(dt)} <span class="tag ${diaDeAvisar?'hoje':''}" style="margin-left:8px;font-weight:500">${etiqueta}${diaDeAvisar?' · dia de avisar':''}</span></h3>
+      <div class="rolar"><table style="border:0">
+        <tr><th>Culto</th><th>Função</th><th>Escalado</th><th>WhatsApp</th><th>Situação</th><th></th></tr>
+        ${idxs.map(i => { const a = lista[i], env = enviados[a.chave]; return `<tr>
+          <td>${esc(a.prog.nome)} <small>${esc(a.prog.hora)}</small></td>
+          <td>${esc(nomeFuncao(a.fid))}</td>
+          <td>${esc(a.nome)}</td>
+          <td>${a.telefone ? (telefoneValido(a.telefone) ? esc(a.telefone) : `<span class="tag alerta">número inválido</span>`) : `<span class="tag alerta">sem telefone</span>`}</td>
+          <td>${env ? `<span class="tag ok">✓ enviado ${new Date(env).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span>` : '<span class="tag">pendente</span>'}</td>
+          <td class="acoes-av"><button class="btn pq" data-av="${i}">${env ? 'Reenviar' : 'Enviar'}</button>
+            <button class="btn sec pq" data-avcopiar="${i}">Copiar</button></td></tr>`; }).join('')}
+      </table></div></article>`;
+  }).join('');
+}
+$('#listaAvisos').addEventListener('click', async e => {
+  const lista = renderAvisos.lista || [];
+  if (e.target.dataset.av != null){
+    const a = lista[Number(e.target.dataset.av)]; if (!a) return;
+    if (!telefoneValido(a.telefone)) toast('Sem telefone válido: escolha o contato no WhatsApp');
+    abrirWhats(linkWhats(a.telefone, mensagemAviso(a)));
+    S.avisos.enviados = S.avisos.enviados || {};
+    S.avisos.enviados[a.chave] = Date.now(); salvar();
+    setTimeout(renderAvisos, 300);
+  }
+  if (e.target.dataset.avcopiar != null){
+    const a = lista[Number(e.target.dataset.avcopiar)]; if (!a) return;
+    const t = mensagemAviso(a);
+    try { await navigator.clipboard.writeText(t); }
+    catch(err){ const x=document.createElement('textarea'); x.value=t; document.body.appendChild(x); x.select(); document.execCommand('copy'); x.remove(); }
+    toast('Mensagem copiada');
+  }
+});
+$('#avDias').addEventListener('change', e => {
+  if (!ehAdmin()) return;
+  const n = Math.min(30, Math.max(1, Number(e.target.value) || 5));
+  S.avisos.dias = n; avJanela = Math.max(avJanela || n, n); salvar(); renderAvisos();
+});
+$('#avJanela').addEventListener('change', e => { avJanela = Math.min(60, Math.max(1, Number(e.target.value) || 5)); renderAvisos(); });
 
 /* ---------- Visualizar ---------- */
 function renderPreview(){
@@ -590,7 +863,7 @@ function renderPreview(){
     const r = S.escala[d.iso+'|'+p.id] || {}, fs = funcoesDo(p);
     linhas += `<tr>${i===0 ? `<td class="data" rowspan="${d.progs.length}">${fmtData(d.dt)}</td>` : ''}
       <td><strong>${esc(p.nome)}</strong><br><small>${esc(p.hora)}</small></td>
-      ${usadas.map(f => fs.includes(f.id) ? `<td>${esc(r[f.id]||'')}</td>` : '<td class="na">—</td>').join('')}
+      ${usadas.map(f => fs.includes(f.id) ? `<td>${esc(textoDe(r[f.id]))}</td>` : '<td class="na">—</td>').join('')}
       ${temObs ? `<td>${esc(r.obs||'')}</td>` : ''}</tr>`;
   }));
   box.innerHTML = `<h2>Escala de Cultos — ${esc(nomeMes(mesAtual))}</h2><p class="sub">${esc(S.igreja)}</p>
@@ -603,7 +876,7 @@ function textoWhats(){
     const r = S.escala[d.iso+'|'+p.id] || {};
     t += `\n📅 *${fmtData(d.dt)}* — ${p.nome} (${p.hora})\n`;
     if (r.obs) t += `📖 ${r.obs}\n`;
-    funcoesDo(p).forEach(fid => { t += `${ICONES[fid]||'•'} ${nomeFuncao(fid)}: ${r[fid] || 'a definir'}\n`; });
+    funcoesDo(p).forEach(fid => { t += `${ICONES[fid]||'•'} ${nomeFuncao(fid)}: ${textoDe(r[fid]) || 'a definir'}\n`; });
   }));
   return t + '\n_Deus abençoe a todos!_';
 }
@@ -636,6 +909,7 @@ function renderConfig(){
       <td><button class="btn perigo pq" data-delprog="${esc(p.id)}">Excluir</button></td></tr>`).join('');
   $('#listaFuncoes').innerHTML = S.funcoes.map(f => `<div class="linha" style="margin-bottom:6px">
       <input value="${esc(f.nome)}" data-fid="${esc(f.id)}" style="flex:1;min-width:200px">
+      <label class="chip ${f.multiplo?'on':''}"><input type="checkbox" data-fmulti="${esc(f.id)}" ${f.multiplo?'checked':''}>Vários nomes</label>
       <button class="btn perigo pq" data-delfunc="${esc(f.id)}">Excluir</button></div>`).join('');
 }
 $('#cfgIgreja').addEventListener('input', e => { S.igreja = e.target.value; $('#tituloIgreja').textContent = S.igreja || 'Escala de Cultos'; salvar(); });
@@ -659,6 +933,10 @@ $('#btnAddProg').addEventListener('click', () => {
   salvar(); renderConfig();
 });
 $('#listaFuncoes').addEventListener('change', e => {
+  if (e.target.dataset.fmulti){
+    const f = S.funcoes.find(x => x.id === e.target.dataset.fmulti); if (!f) return;
+    f.multiplo = e.target.checked; salvar(); return;
+  }
   const f = S.funcoes.find(x => x.id === e.target.dataset.fid); if (!f) return;
   f.nome = e.target.value.trim() || f.nome; salvar(); renderConfig();
 });
@@ -668,6 +946,7 @@ $('#listaFuncoes').addEventListener('click', e => {
   S.funcoes = S.funcoes.filter(f => f.id !== id);
   S.programas.forEach(p => p.funcoes = (p.funcoes||[]).filter(f => f !== id));
   S.membros.forEach(m => m.funcoes = (m.funcoes||[]).filter(f => f !== id));
+  S.usuarios.forEach(u => u.funcoes = (u.funcoes||[]).filter(f => f !== id));
   salvar(); renderConfig(); renderDatalists();
 });
 $('#btnAddFuncao').addEventListener('click', () => {
@@ -690,7 +969,7 @@ $('#arqImport').addEventListener('change', e => {
       if (!d || !Array.isArray(d.funcoes) || !Array.isArray(d.programas)) throw 0;
       if (!confirm('Substituir os dados atuais pelos do arquivo?')) return;
       if (!Array.isArray(d.usuarios) || !d.usuarios.some(u => u.perfil === 'admin')) d.usuarios = S.usuarios;
-      S = Object.assign(clone(PADRAO), d); salvar();
+      S = migrar(Object.assign(clone(PADRAO), {versao:1}, d)); salvar();
       const eu = S.usuarios.find(u => u.id === usuario.id);
       if (!eu) { toast('Dados importados. Entre novamente.'); sair(); return; }
       usuario = eu; aplicarPerfil(); abrirAba('config'); toast('Dados importados');
@@ -712,7 +991,7 @@ function renderTudo(){
   $('#mesSel').value = mesAtual;
   $('#tituloIgreja').textContent = S.igreja || 'Escala de Cultos';
   if (!usuario) return;
-  renderDatalists(); renderEscala(); renderPreview();
+  renderDatalists(); renderEscala(); renderPreview(); renderAvisos();
   if (ehAdmin()){ renderMembros(); renderConfig(); renderUsuarios(); }
 }
 (() => {
