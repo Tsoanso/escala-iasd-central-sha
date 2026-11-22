@@ -284,17 +284,21 @@
   <section id="tab-usuarios">
     <div class="cartao">
       <h2>Novo usuário</h2>
-      <p class="dica"><strong>Administrador:</strong> acesso a tudo. <strong>Líder:</strong> acessa Escala (vendo só os campos pelos quais é responsável) e Visualizar / Enviar (escala completa).</p>
+      <p class="dica"><strong>Administrador:</strong> acesso a tudo. <strong>Líder:</strong> preenche na Escala só os campos marcados para ele, em todos os cultos. <strong>Líder JA:</strong> preenche os campos marcados só nos cultos do JA (ou nos cultos marcados para ele). Todos veem a escala completa em Visualizar / Enviar.</p>
       <div class="linha">
         <label style="flex:1;min-width:180px">Nome<input id="nuNome" placeholder="Ex.: Ancião Paulo"></label>
         <label style="flex:1;min-width:200px">E-mail (login)<input type="email" id="nuEmail" autocapitalize="none" placeholder="Ex.: paulo@gmail.com"></label>
         <label style="flex:1;min-width:140px">Senha inicial<input type="password" id="nuSenha" autocomplete="new-password" placeholder="Mín. 6 caracteres"></label>
         <label style="min-width:170px">WhatsApp (com DDD)<input id="nuTel" inputmode="tel" placeholder="(71) 99999-9999"></label>
-        <label style="min-width:140px">Perfil<select id="nuPerfil"><option value="lider">Líder</option><option value="admin">Administrador</option></select></label>
+        <label style="min-width:140px">Perfil<select id="nuPerfil"><option value="lider">Líder</option><option value="lider_ja">Líder JA</option><option value="admin">Administrador</option></select></label>
       </div>
       <div id="nuCampos">
         <p class="dica" style="margin:12px 0 6px">Campos que este líder vai preencher:</p>
         <div class="chips" id="nuFuncoes"></div>
+        <div id="nuProgsBox" hidden>
+          <p class="dica" style="margin:12px 0 6px">Cultos que o Líder JA pode preencher:</p>
+          <div class="chips" id="nuProgs"></div>
+        </div>
       </div>
       <div style="margin-top:12px"><button class="btn" id="btnAddUsuario">Criar usuário</button></div>
     </div>

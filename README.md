@@ -19,6 +19,7 @@ Para cada culto, o app tem os campos:
 |---|---|
 | **Administrador** | Tudo: Escala, Membros, Visualizar / Enviar, Avisos, Configurações e Usuários |
 | **Líder** | **Escala**: vê e preenche **somente os campos atribuídos a ele** · **Visualizar / Enviar**: vê a escala completa · **Avisos**: avisa quem foi escalado nas funções dele |
+| **Líder JA** | Igual ao Líder, mas só nos **cultos do JA** (ou nos cultos marcados para ele), com os campos que o administrador escolher |
 
 O login é por **e-mail e senha**. A tela de entrada tem a opção "Esqueci minha senha", e quem já está dentro pode trocar a senha no botão **Minha senha**. As regras de segurança do Firebase garantem que um líder só consegue alterar os próprios campos, mesmo que tente burlar o app.
 

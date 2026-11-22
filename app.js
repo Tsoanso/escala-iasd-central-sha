@@ -145,7 +145,14 @@ document.addEventListener('focusout', () => setTimeout(() => {
 }, 60));
 
 /* ---------- Login ---------- */
+const PERFIS = { admin:'Administrador', lider:'Líder', lider_ja:'Líder JA' };
+const PERFIS_ATIVOS = Object.keys(PERFIS);
 const ehAdmin = () => usuario?.perfil === 'admin';
+const ehLiderJA = () => usuario?.perfil === 'lider_ja';
+// Programações do JA (usadas como padrão para o perfil Líder JA)
+const programasJA = () => S.programas.filter(p => p.id === 'sab-ja' || /jovem|\bJA\b/i.test(p.nome || '')).map(p => p.id);
+// O usuário pode mexer nesta programação? (Líder JA só nas programações marcadas para ele)
+const programaPermitido = (u, pid) => u?.perfil !== 'lider_ja' || (u.programas || []).includes(pid);
 let modoSetup = false;
 
 async function mostrarLogin(msgErro){
@@ -200,9 +207,9 @@ async function aoMudarLogin(u){
   carregando('Carregando seus dados…');
   ouvintes.push(nuvem.ouvirDoc('usuarios', u.uid, d => {
     if (!d) { if (instalando) return; sairComErro('Seu acesso não está liberado. Fale com o administrador.'); return; }
-    if (!['admin','lider'].includes(d.perfil)) { sairComErro('Seu acesso foi removido. Fale com o administrador.'); return; }
+    if (!PERFIS_ATIVOS.includes(d.perfil)) { sairComErro('Seu acesso foi removido. Fale com o administrador.'); return; }
     const primeira = !usuario;
-    usuario = { id: u.uid, ...d, funcoes: d.funcoes || [] };
+    usuario = { id: u.uid, ...d, funcoes: d.funcoes || [], programas: d.programas || [] };
     if (primeira) iniciarOuvintes();
     aplicarPerfil(); agendarRender();
   }, e => sairComErro(traduzErroLogin(e))));
@@ -273,7 +280,7 @@ function aplicarEscala(docs){
 
 function aplicarPerfil(){
   document.querySelectorAll('[data-perfil="admin"]').forEach(el => el.hidden = !ehAdmin());
-  $('#usuarioInfo').textContent = usuario.nome + ' · ' + (ehAdmin() ? 'Administrador' : 'Líder');
+  $('#usuarioInfo').textContent = usuario.nome + ' · ' + (PERFIS[usuario.perfil] || 'Líder');
 }
 
 /* ---------- Gravação da escala (com espera enquanto digita) ---------- */
@@ -313,15 +320,20 @@ function marcarSalvando(d){
 
 /* ---------- Escala ---------- */
 const funcoesDoUsuario = () => ehAdmin() ? S.funcoes.map(f => f.id) : (usuario?.funcoes || []);
-const funcoesVisiveis = p => { const ok = funcoesDoUsuario(); return funcoesDo(p).filter(f => ok.includes(f)); };
+const funcoesVisiveis = p => {
+  if (!programaPermitido(usuario, p.id)) return [];
+  const ok = funcoesDoUsuario(); return funcoesDo(p).filter(f => ok.includes(f));
+};
 const podeTema = () => ehAdmin() || funcoesDoUsuario().includes('pregacao');
 function renderEscala(){
   const box = $('#listaDias'), dias = diasDoMes(mesAtual);
   const minhas = funcoesDoUsuario().filter(id => S.funcoes.some(f => f.id === id));
   $('#dicaEscala').innerHTML = ehAdmin()
     ? 'Digite os nomes ou escolha da lista. Tudo é salvo automaticamente na nuvem e aparece para todos. O rodízio usa os membros cadastrados e as funções marcadas para cada um.'
-    : (minhas.length ? 'Você é responsável por: <strong>' + minhas.map(id => esc(nomeFuncao(id))).join(', ') + '</strong>. A escala completa está em Visualizar / Enviar.' : '');
-  if (!minhas.length){ box.innerHTML = '<p class="vazio">Nenhum campo foi atribuído a você ainda. Peça ao administrador para definir quais campos você preenche.</p>'; return; }
+    : (minhas.length ? 'Você é responsável por: <strong>' + minhas.map(id => esc(nomeFuncao(id))).join(', ') + '</strong>' +
+        (ehLiderJA() ? ' no <strong>' + (usuario.programas||[]).map(pid => esc((S.programas.find(p => p.id === pid)||{}).nome || pid)).join(', ') + '</strong>' : '') +
+        '. A escala completa está em Visualizar / Enviar.' : '');
+  if (!minhas.length || (ehLiderJA() && !(usuario.programas||[]).length)){ box.innerHTML = '<p class="vazio">Nenhum campo foi atribuído a você ainda. Peça ao administrador para definir quais campos você preenche.</p>'; return; }
   const visiveis = dias.map(d => ({...d, progs: d.progs.filter(p => funcoesVisiveis(p).length)})).filter(d => d.progs.length);
   if (!visiveis.length){ box.innerHTML = '<p class="vazio">Nenhuma programação deste mês usa os seus campos.</p>'; return; }
   box.innerHTML = visiveis.map(d => `
@@ -363,7 +375,7 @@ function atualizarCampo(k, fid, v, imediato = false){
 $('#listaDias').addEventListener('click', e => {
   const b = e.target.closest('button[data-k]'); if (!b) return;
   const k = b.dataset.k, fid = b.dataset.f;
-  if (!funcoesDoUsuario().includes(fid)) return;
+  if (!funcoesDoUsuario().includes(fid) || !programaPermitido(usuario, k.split('|')[1])) return;
   const vagas = vagasDe((S.escala[k] || {})[fid]);
   let foco;
   if (b.dataset.add){ if (!vagas.length) vagas.push(''); vagas.push(''); foco = vagas.length - 1; }
@@ -378,6 +390,7 @@ $('#listaDias').addEventListener('click', e => {
 $('#listaDias').addEventListener('input', e => {
   const i = e.target; if (!i.dataset.k) return;
   if (i.dataset.f === 'obs' ? !podeTema() : !funcoesDoUsuario().includes(i.dataset.f)) return;
+  if (!programaPermitido(usuario, i.dataset.k.split('|')[1])) return;
   const v = i.value.trim();
   if (i.dataset.idx != null){
     const vagas = vagasDe((S.escala[i.dataset.k] || {})[i.dataset.f]);
@@ -541,11 +554,19 @@ $('#btnAddVarios').addEventListener('click', async () => {
 });
 
 /* ---------- Usuários (admin) ---------- */
-const usuariosAtivos = () => S.usuarios.filter(u => ['admin','lider'].includes(u.perfil));
+const usuariosAtivos = () => S.usuarios.filter(u => PERFIS_ATIVOS.includes(u.perfil));
+function chipsProgramas(sel, attrs=''){
+  return S.programas.map(p => `<label class="chip ${sel.includes(p.id)?'on':''}"><input type="checkbox" value="${esc(p.id)}" ${sel.includes(p.id)?'checked':''} ${attrs}>${esc(p.nome)} <small>(${DIAS[Number(p.dia)].slice(0,3).toLowerCase()})</small></label>`).join('');
+}
+const opcoesPerfil = atual => Object.entries(PERFIS).map(([v, n]) => `<option value="${v}" ${atual===v?'selected':''}>${n}</option>`).join('');
+const perfilValido = v => PERFIS_ATIVOS.includes(v) ? v : 'lider';
 function renderUsuarios(){
   if (!ehAdmin()) { $('#listaUsuarios').innerHTML = ''; return; }
   const marcados = [...document.querySelectorAll('#nuFuncoes input:checked')].map(i => i.value);
   $('#nuFuncoes').innerHTML = chipsFuncoes(marcados);
+  const progMarcados = $('#nuProgs').children.length ? [...document.querySelectorAll('#nuProgs input:checked')].map(i => i.value) : programasJA();
+  $('#nuProgs').innerHTML = chipsProgramas(progMarcados);
+  atualizarFormPerfil();
   const lista = usuariosAtivos().sort((a,b) => (a.nome||'').localeCompare(b.nome||'','pt-BR'));
   $('#listaUsuarios').innerHTML = `<div class="rolar"><table>
     <tr><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Perfil</th><th>Campos que preenche</th><th>Ações</th></tr>
@@ -554,9 +575,10 @@ function renderUsuarios(){
       <td>${esc(u.email)}</td>
       <td><input class="tel" value="${esc(u.telefone||'')}" data-utel="${esc(u.id)}" inputmode="tel" placeholder="(DDD) número"></td>
       <td>${eu ? `<span class="tag admin">Administrador</span>` :
-        `<select data-uperfil="${esc(u.id)}"><option value="lider" ${u.perfil==='lider'?'selected':''}>Líder</option><option value="admin" ${u.perfil==='admin'?'selected':''}>Administrador</option></select>`}</td>
+        `<select data-uperfil="${esc(u.id)}">${opcoesPerfil(u.perfil)}</select>`}</td>
       <td>${u.perfil === 'admin' ? '<span class="dica">Todos</span>' :
-        `<div class="chips">${chipsFuncoes(u.funcoes||[], `data-ufunc="${esc(u.id)}"`)}</div>${(u.funcoes||[]).length ? '' : '<small style="color:#b3261e">Nenhum campo — este líder não verá nada na Escala</small>'}`}</td>
+        `<div class="chips">${chipsFuncoes(u.funcoes||[], `data-ufunc="${esc(u.id)}"`)}</div>${(u.funcoes||[]).length ? '' : '<small style="color:#b3261e">Nenhum campo — este líder não verá nada na Escala</small>'}` +
+        (u.perfil === 'lider_ja' ? `<p class="dica" style="margin:8px 0 4px">Cultos que pode preencher:</p><div class="chips">${chipsProgramas(u.programas||[], `data-uprog="${esc(u.id)}"`)}</div>${(u.programas||[]).length ? '' : '<small style="color:#b3261e">Nenhum culto marcado</small>'}` : '')}</td>
       <td>${eu ? `<button class="btn sec pq" data-minha="1">Alterar senha</button>` :
         `<button class="btn sec pq" data-uredef="${esc(u.id)}">Enviar redefinição de senha</button>
          <button class="btn perigo pq" data-udel="${esc(u.id)}">Excluir</button>`}</td></tr>`; }).join('')}
@@ -574,14 +596,27 @@ $('#listaUsuarios').addEventListener('change', async e => {
       let f = [...(u.funcoes||[])];
       if (i.checked){ if (!f.includes(i.value)) f.push(i.value); } else f = f.filter(x => x !== i.value);
       await nuvem.definir('usuarios', u.id, { funcoes: f });
+    } else if (i.dataset.uprog){
+      const u = S.usuarios.find(x => x.id === i.dataset.uprog); if (!u) return;
+      let pr = [...(u.programas||[])];
+      if (i.checked){ if (!pr.includes(i.value)) pr.push(i.value); } else pr = pr.filter(x => x !== i.value);
+      await nuvem.definir('usuarios', u.id, { programas: pr });
     } else if (i.dataset.uperfil){
       if (i.dataset.uperfil === usuario.id) return;
-      await nuvem.definir('usuarios', i.dataset.uperfil, { perfil: i.value === 'admin' ? 'admin' : 'lider' });
+      const u = S.usuarios.find(x => x.id === i.dataset.uperfil);
+      const perfil = perfilValido(i.value), mud = { perfil };
+      if (perfil === 'lider_ja' && !(u?.programas||[]).length) mud.programas = programasJA();
+      await nuvem.definir('usuarios', i.dataset.uperfil, mud);
       toast('Perfil atualizado');
     }
   } catch(err){ erroNuvem(err); }
 });
-$('#nuPerfil').addEventListener('change', () => { $('#nuCampos').hidden = $('#nuPerfil').value === 'admin'; });
+function atualizarFormPerfil(){
+  const p = $('#nuPerfil').value;
+  $('#nuCampos').hidden = p === 'admin';
+  $('#nuProgsBox').hidden = p !== 'lider_ja';
+}
+$('#nuPerfil').addEventListener('change', atualizarFormPerfil);
 $('#listaUsuarios').addEventListener('click', async e => {
   const d = e.target.dataset;
   if (d.minha) { abrirDialogSenha(); return; }
@@ -600,10 +635,12 @@ $('#btnAddUsuario').addEventListener('click', async () => {
   if (!nome || !email) return toast('Informe nome e e-mail');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('E-mail inválido');
   if (usuariosAtivos().some(u => (u.email||'').toLowerCase() === email)) return toast('Esse e-mail já é usuário');
-  const perfil = $('#nuPerfil').value === 'admin' ? 'admin' : 'lider';
+  const perfil = perfilValido($('#nuPerfil').value);
   const funcoes = [...document.querySelectorAll('#nuFuncoes input:checked')].map(i => i.value);
-  if (perfil === 'lider' && !funcoes.length) return toast('Marque ao menos um campo para este líder');
-  const dados = { nome, email, perfil, telefone: $('#nuTel').value.trim(), funcoes: perfil === 'lider' ? funcoes : [] };
+  const programas = [...document.querySelectorAll('#nuProgs input:checked')].map(i => i.value);
+  if (perfil !== 'admin' && !funcoes.length) return toast('Marque ao menos um campo para este líder');
+  if (perfil === 'lider_ja' && !programas.length) return toast('Marque ao menos um culto para o Líder JA');
+  const dados = { nome, email, perfil, telefone: $('#nuTel').value.trim(), funcoes: perfil === 'admin' ? [] : funcoes, programas: perfil === 'lider_ja' ? programas : [] };
   const btn = $('#btnAddUsuario'); btn.disabled = true;
   try {
     const antigo = S.usuarios.find(u => (u.email||'').toLowerCase() === email);
@@ -617,8 +654,8 @@ $('#btnAddUsuario').addEventListener('click', async () => {
       await nuvem.definir('usuarios', novoId, dados, false);
       toast('Usuário ' + email + ' criado. Passe para ele o e-mail e a senha inicial.', 4000);
     }
-    ['#nuNome','#nuEmail','#nuSenha','#nuTel'].forEach(s => $(s).value = ''); $('#nuPerfil').value = 'lider'; $('#nuCampos').hidden = false;
-    $('#nuFuncoes').innerHTML = chipsFuncoes([]);
+    ['#nuNome','#nuEmail','#nuSenha','#nuTel'].forEach(s => $(s).value = ''); $('#nuPerfil').value = 'lider';
+    $('#nuFuncoes').innerHTML = chipsFuncoes([]); $('#nuProgs').innerHTML = chipsProgramas(programasJA()); atualizarFormPerfil();
   } catch(err){
     if ((err?.code||'').includes('email-already-in-use')) toast('Este e-mail já tem conta no Firebase, mas não está na lista. Apague-o em Authentication no console do Firebase e tente de novo.', 7000);
     else toast(traduzErroLogin(err), 5000);
@@ -657,17 +694,19 @@ function membroPorNome(nome){
   const n = nome.trim().toLowerCase();
   return S.membros.find(m => (m.nome||'').trim().toLowerCase() === n);
 }
-function responsavelDe(fid){
+// Líder responsável: no culto do JA, primeiro o Líder JA daquele campo; depois o Líder do campo; senão um administrador
+function responsavelDe(fid, pid){
   const ativos = usuariosAtivos(), comTel = ativos.filter(u => telefoneValido(u.telefone));
-  return comTel.find(u => u.perfil === 'lider' && (u.funcoes||[]).includes(fid))
-      || ativos.find(u => u.perfil === 'lider' && (u.funcoes||[]).includes(fid))
+  const ja = u => u.perfil === 'lider_ja' && (u.funcoes||[]).includes(fid) && (u.programas||[]).includes(pid);
+  const lid = u => u.perfil === 'lider' && (u.funcoes||[]).includes(fid);
+  return comTel.find(ja) || ativos.find(ja) || comTel.find(lid) || ativos.find(lid)
       || comTel.find(u => u.perfil === 'admin') || null;
 }
-function escaladosEntre(inicio, fim, filtroFuncoes){
+function escaladosEntre(inicio, fim, filtroFuncoes, filtroProgramas){
   const out = [];
   for (let dt = new Date(inicio); dt <= fim; dt = somaDias(dt, 1)){
     const iso = isoDe(dt);
-    S.programas.filter(p => p.ativo && Number(p.dia) === dt.getDay())
+    S.programas.filter(p => p.ativo && Number(p.dia) === dt.getDay() && (!filtroProgramas || filtroProgramas.includes(p.id)))
       .sort((a,b) => (a.hora||'').localeCompare(b.hora||''))
       .forEach(p => {
         const r = S.escala[iso+'|'+p.id] || {};
@@ -684,7 +723,7 @@ function escaladosEntre(inicio, fim, filtroFuncoes){
 }
 const quandoTexto = a => `${DIAS[a.dt.getDay()].toLowerCase()}, ${String(a.dt.getDate()).padStart(2,'0')}/${String(a.dt.getMonth()+1).padStart(2,'0')}, às ${a.prog.hora || '—'}`;
 function mensagemAviso(a){
-  const resp = responsavelDe(a.fid);
+  const resp = responsavelDe(a.fid, a.prog.id);
   const contato = resp
     ? `${resp.nome}${telefoneValido(resp.telefone) ? ' pelo WhatsApp: https://wa.me/' + telefoneWhats(resp.telefone) : ''}`
     : 'o líder responsável';
@@ -713,7 +752,7 @@ function renderAvisos(){
   $('#avDias').value = dias; $('#avDias').disabled = !ehAdmin();
   $('#avJanela').value = avJanela;
   const hoje = hojeLocal();
-  const lista = escaladosEntre(hoje, somaDias(hoje, avJanela), ehAdmin() ? null : funcoesDoUsuario());
+  const lista = escaladosEntre(hoje, somaDias(hoje, avJanela), ehAdmin() ? null : funcoesDoUsuario(), ehLiderJA() ? (usuario.programas||[]) : null);
   renderAvisos.lista = lista;
   const box = $('#listaAvisos');
   if (!lista.length){ box.innerHTML = `<p class="vazio">Ninguém escalado ${ehAdmin() ? '' : 'nas suas funções '}nos próximos ${avJanela} dias.</p>`; return; }
