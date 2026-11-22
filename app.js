@@ -4,11 +4,13 @@ import * as nuvem from './nuvem.js';
 
 const LOCAL_ANTIGO = 'escala-cultos-iasd-v1';   // chave usada pela versão sem nuvem
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const ICONES = {pregacao:'🎤', sonoplastia:'🎧', louvor:'🎶', especial:'🎵', adoracao:'🧒', diaconos:'🤝', diaconisas:'🤝', recepcao:'👋'};
+const ICONES = {escolasabatina:'📚', pregacao:'🎤', sonoplastia:'🎧', louvor:'🎶', especial:'🎵', adoracao:'🧒', diaconos:'🤝', diaconisas:'🤝', recepcao:'👋'};
 const SABADO = ['adoracao','diaconos','diaconisas','recepcao'];
 const CONFIG_PADRAO = {
   igreja: 'Igreja Adventista do Sétimo Dia',
+  versao: 5,
   funcoes: [
+    {id:'escolasabatina', nome:'Escola Sabatina'},
     {id:'pregacao',    nome:'Pregação'},
     {id:'sonoplastia', nome:'Sonoplastia'},
     {id:'louvor',      nome:'Louvor Congregacional'},
@@ -21,7 +23,7 @@ const CONFIG_PADRAO = {
   programas: [
     {id:'qua-oracao', dia:3, nome:'Culto de Oração',      hora:'19:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']},
     {id:'sab-es',     dia:6, nome:'Escola Sabatina',      hora:'09:00', ativo:false, funcoes:['sonoplastia','louvor','especial',...SABADO]},
-    {id:'sab-divino', dia:6, nome:'Culto Divino',         hora:'10:30', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial',...SABADO]},
+    {id:'sab-divino', dia:6, nome:'Culto Divino',         hora:'10:30', ativo:true,  funcoes:['escolasabatina','pregacao','sonoplastia','louvor','especial',...SABADO]},
     {id:'sab-ja',     dia:6, nome:'Culto Jovem (JA)',     hora:'17:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial',...SABADO]},
     {id:'dom-evang',  dia:0, nome:'Culto de Evangelismo', hora:'19:00', ativo:true,  funcoes:['pregacao','sonoplastia','louvor','especial']}
   ],
@@ -64,7 +66,9 @@ const traduzErroLogin = e => {
   if (c.includes('email-already-in-use')) return 'Este e-mail já tem conta';
   if (c.includes('weak-password')) return 'Senha fraca: use pelo menos 6 caracteres';
   if (c.includes('network')) return 'Sem conexão com a internet';
-  if (c.includes('operation-not-allowed')) return 'Ative o login por e-mail/senha no Firebase (veja o README)';
+  if (c.includes('operation-not-allowed') || c.includes('configuration-not-found'))
+    return 'O login por e-mail/senha ainda não está ativado no Firebase. No console do Firebase, vá em Authentication → Método de login → E-mail/senha → Ativar → Salvar, e tente de novo.';
+  if (c.includes('unauthorized-domain')) return 'Este endereço ainda não foi autorizado no Firebase: Authentication → Configurações → Domínios autorizados → adicione ' + location.hostname;
   return 'Erro: ' + (e?.message || c);
 };
 
@@ -211,6 +215,7 @@ function iniciarOuvintes(){
       if (ehAdmin()) nuvem.definir('config', 'geral', clone(CONFIG_PADRAO), false).catch(erroNuvem);
       return;
     }
+    if ((d.versao || 4) < 5 && ehAdmin()) { migrarConfigV5(d); return; }
     S.igreja = d.igreja || CONFIG_PADRAO.igreja;
     S.funcoes = d.funcoes || [];
     S.programas = d.programas || [];
@@ -221,6 +226,18 @@ function iniciarOuvintes(){
   ouvintes.push(nuvem.ouvirColecao('membros', l => { S.membros = l; agendarRender(); }, erroNuvem));
   ouvintes.push(nuvem.ouvirColecao('usuarios', l => { S.usuarios = l; agendarRender(); }, erroNuvem));
   ouvirEscalaDaFaixa();
+}
+// v5: acrescenta a função "Escola Sabatina" e a coloca no Culto Divino de sábado
+function migrarConfigV5(d){
+  const cfg = clone(d);
+  cfg.funcoes = cfg.funcoes || [];
+  if (!cfg.funcoes.some(f => f.id === 'escolasabatina')) cfg.funcoes.unshift({ id:'escolasabatina', nome:'Escola Sabatina' });
+  (cfg.programas || []).forEach(p => {
+    const divino = p.id === 'sab-divino' || (Number(p.dia) === 6 && /divino/i.test(p.nome || ''));
+    if (divino){ p.funcoes = p.funcoes || []; if (!p.funcoes.includes('escolasabatina')) p.funcoes.unshift('escolasabatina'); }
+  });
+  cfg.versao = 5;
+  nuvem.definir('config', 'geral', cfg, false).catch(erroNuvem);
 }
 // Escuta a escala do mês aberto e dos próximos 60 dias (para os avisos)
 function ouvirEscalaDaFaixa(){
@@ -783,7 +800,7 @@ $('#btnCopiar').addEventListener('click', async () => { await copiarTexto(textoW
 $('#btnWhats').addEventListener('click', () => abrirWhats(linkWhats('', textoWhats())));
 
 /* ---------- Configurações (admin) ---------- */
-const configAtual = () => ({ igreja: S.igreja, funcoes: S.funcoes, programas: S.programas, avisosDias: S.avisos.dias });
+const configAtual = () => ({ versao: 5, igreja: S.igreja, funcoes: S.funcoes, programas: S.programas, avisosDias: S.avisos.dias });
 async function salvarConfig(){
   try { await nuvem.definir('config', 'geral', clone(configAtual()), false); } catch(err){ erroNuvem(err); }
 }
@@ -876,12 +893,16 @@ function migrarFormatoAntigo(d){
     d.programas.forEach(p => { if (Number(p.dia) === 6){ p.funcoes = p.funcoes || []; SABADO.forEach(id => { if (!p.funcoes.includes(id)) p.funcoes.push(id); }); } });
   }
   if ((d.versao || 1) < 3) d.funcoes.forEach(f => { if (f.id === 'diaconos' || f.id === 'diaconisas') f.multiplo = true; });
+  if ((d.versao || 1) < 5){
+    if (!d.funcoes.some(f => f.id === 'escolasabatina')) d.funcoes.unshift({ id:'escolasabatina', nome:'Escola Sabatina' });
+    d.programas.forEach(p => { if (p.id === 'sab-divino' || (Number(p.dia) === 6 && /divino/i.test(p.nome || ''))){ p.funcoes = p.funcoes || []; if (!p.funcoes.includes('escolasabatina')) p.funcoes.unshift('escolasabatina'); } });
+  }
   return d;
 }
 async function enviarParaNuvem(d){
   d = migrarFormatoAntigo(d);
   const ops = [{ col:'config', id:'geral', mesclar:false, dados:{
-    igreja: d.igreja || CONFIG_PADRAO.igreja, funcoes: d.funcoes, programas: d.programas, avisosDias: Number(d.avisos?.dias) || 5 } }];
+    versao: 5, igreja: d.igreja || CONFIG_PADRAO.igreja, funcoes: d.funcoes, programas: d.programas, avisosDias: Number(d.avisos?.dias) || 5 } }];
   (d.membros || []).forEach(m => { if (m?.nome) ops.push({ col:'membros', id: m.id || uid(), mesclar:false, dados:{ nome: m.nome, telefone: m.telefone || '', funcoes: m.funcoes || [] } }); });
   const avisosPorChave = {};
   Object.entries(d.avisos?.enviados || {}).forEach(([k, ts]) => {

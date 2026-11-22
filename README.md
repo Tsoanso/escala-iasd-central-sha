@@ -4,6 +4,7 @@ Aplicativo web para montar a escala dos cultos de **quarta, sábado e domingo** 
 
 Para cada culto, o app tem os campos:
 
+- 📚 **Escola Sabatina** — responsável pela Escola Sabatina (no Culto Divino de sábado)
 - 🎤 **Pregação**
 - 🎧 **Sonoplastia**
 - 🎶 **Louvor Congregacional**
