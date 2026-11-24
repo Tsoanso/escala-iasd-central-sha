@@ -439,7 +439,8 @@ $('#btnSugerir').addEventListener('click', async () => {
         const pick = cand[Math.floor(Math.random()*cand.length)];
         cont[fid][pick.nome] = min+1; n++; return pick.nome;
       };
-      vagas = vagas.map(x => x.trim() ? x : (escolher() || ''));
+      // uma vaga de cada vez, para a mesma pessoa não ser escolhida duas vezes no mesmo campo
+      for (let j = 0; j < vagas.length; j++) if (!vagas[j].trim()) vagas[j] = escolher() || '';
       if (nomesDe(vagas).length){ r[fid] = multi ? vagas : vagas[0]; S.escala[k] = r; mudancas[fid] = r[fid]; }
     });
     if (Object.keys(mudancas).length) ops.push({ col:'escala', id: idEscala(k), dados: { data: d.iso, programa: p.id, ...mudancas } });
